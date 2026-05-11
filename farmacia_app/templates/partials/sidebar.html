@@ -1,0 +1,141 @@
+  {% load static %}
+  <!-- partial:partials/_sidebar.html -->
+        <nav class="sidebar sidebar-offcanvas" id="sidebar">
+  <ul class="nav">
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'inicio' %}">
+        <i class="mdi mdi-home menu-icon"></i>
+        <span class="menu-title">Inicio</span>  <!--Dashboard-->
+      </a>
+    </li>
+
+    {% if request.session.Rol == "Administrador" %}
+      <!-- Menú completo para Administrador -->
+      <!-- Productos -->
+    <li class="nav-item">
+  <a class="nav-link" data-bs-toggle="collapse" href="#productos" aria-expanded="false" aria-controls="productos">
+    <i class="mdi mdi-pill menu-icon"></i>
+    <span class="menu-title">Productos Farmacéuticos</span> <!--Productos Farmaseuticos-->
+    <i class="menu-arrow"></i>
+  </a>
+  <div class="collapse" id="productos"> <!--SubMenu Productos Farmaseuticos-->
+    <ul class="nav flex-column sub-menu">
+      <li class="nav-item"><a class="nav-link" href="{% url 'inventario' %}">
+        <i class="fas fa-warehouse menu-icon"></i>
+        Inventario</a></li>
+      <li class="nav-item"><a class="nav-link" href="{% url 'unidad_medida' %}">
+        <i class="fas fa-box menu-icon"></i>
+        Unidad de Medida</a></li>
+      <li class="nav-item"><a class="nav-link" href="{% url 'categoria' %}">
+        <i class="mdi mdi-tag menu-icon"></i>
+        Categoría</a></li>
+      <li class="nav-item"><a class="nav-link" href="{% url 'caducidad' %}">
+        <i class="mdi mdi-calendar-clock menu-icon"></i>
+        Caducidad</a></li>
+      <li class="nav-item"><a class="nav-link" href="{% url 'stock_bajo' %}">
+        <i class="mdi mdi-alert-circle menu-icon"></i>
+        Stock Bajo</a></li>
+      
+       </ul>
+      </div>
+    </li>
+
+         <!-- Proveedores -->
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'proveedores' %}">
+        <i class="fas fa-truck menu-icon"></i>
+        <span class="menu-title">Proveedores</span>
+      </a>
+    </li>
+
+    <!-- Empleados -->
+<li class="nav-item">
+  <a class="nav-link" data-bs-toggle="collapse" href="#empleados" aria-expanded="false" aria-controls="empleados">
+    <i class="fas fa-user-tie menu-icon"></i>
+    <span class="menu-title">Empleados</span>
+    <i class="menu-arrow"></i>
+  </a>
+  <div class="collapse" id="empleados">
+    <ul class="nav flex-column sub-menu">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'personal' %}">
+          <i class="mdi mdi-account-group menu-icon"></i>
+          Personal
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'cuentas' %}">
+          <i class="fas fa-user-shield menu-icon"></i>
+          Cuentas
+        </a>
+      </li>
+    </ul>
+  </div>
+</li>
+    <!-- Clientes -->
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'clientes' %}">
+        <i class="fas fa-users menu-icon"></i>
+        <span class="menu-title">Clientes</span>
+      </a>
+    </li>
+
+      <!-- Compras -->
+  <li class="nav-item">
+  <a class="nav-link" data-bs-toggle="collapse" href="#compras" aria-expanded="false" aria-controls="compras">
+    <i class="fas fa-shopping-bag menu-icon"></i>
+    <span class="menu-title">Compras</span>
+    <i class="menu-arrow"></i>
+  </a>
+  <div class="collapse" id="compras">
+    <ul class="nav flex-column sub-menu">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'registro_compra' %}">
+          <i class="fas fa-cart-plus menu-icon"></i>
+          Registrar Compra
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'consulta_compras' %}">
+          <i class="fas fa-list-alt menu-icon"></i>
+          Historial Compra
+        </a>
+      </li>
+    </ul>
+  </div>
+</li>
+
+  <!-- Ventas -->
+  <li class="nav-item">
+  <a class="nav-link" data-bs-toggle="collapse" href="#ventas" aria-expanded="false" aria-controls="ventas">
+    <i class="fas fa-store menu-icon"></i>
+    <span class="menu-title">Ventas</span>
+    <i class="menu-arrow"></i>
+  </a>
+  <div class="collapse" id="ventas">
+    <ul class="nav flex-column sub-menu">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'caja' %}">
+          <i class="fas fa-cash-register menu-icon"></i>
+          Caja
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'historial_ventas' %}">
+          <i class="fas fa-file-invoice-dollar menu-icon"></i>
+          Historial De Venta
+        </a>
+      </li>
+    </ul>
+  </div>
+</li>
+
+{% elif request.session.Rol == "Cajero" %}
+      <!-- Menú limitado para Cajero -->
+      <li class="nav-item"><a class="nav-link" href="{% url 'inventario' %}"><i class="fas fa-warehouse menu-icon"></i>Inventario</a></li>
+      <li class="nav-item"><a class="nav-link" href="{% url 'registro_compra' %}"><i class="fas fa-cart-plus menu-icon"></i>Registrar Compra</a></li>
+      <li class="nav-item"><a class="nav-link" href="{% url 'caja' %}"><i class="fas fa-cash-register menu-icon"></i>Registrar Venta</a></li>
+    {% endif %}
+
+  </ul>
+</nav>

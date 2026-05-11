@@ -1,0 +1,419 @@
+{% extends 'paginas/index.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <!-- Barra de búsqueda y botón agregar -->
+  <div class="d-flex justify-content-between mb-3">
+      <input type="text" id="buscadorUnidades" class="form-control w-50" placeholder="Buscar unidad...">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUnidadMedida">
+        <i class="fa fa-plus me-2"></i> Agregar
+      </button>
+  </div>
+
+  <!-- Tabla Unidades de Medida -->
+<div class="d-flex justify-content-center">
+  <table id="tablaUnidades" class="table table-striped text-center">
+    <thead>
+      <tr>
+        <th style="display:none;">ID</th>
+        <th>Producto</th>
+        <th>Presentación</th>
+        <th>Equivalencia</th>
+        <th>Precio Compra</th>
+        <th>Ganancia</th>
+        <th>Precio Venta</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for unidad in unidades %}
+      <tr>
+        <td style="display:none;">{{ unidad.Id_UnidadMedida }}</td>
+        <td>{{ unidad.Id_Medicamento.Nombre_Medicamento }}</td>
+        <td>{{ unidad.NombreUnidad }}</td>
+        <td>{{ unidad.Equivalencia }}</td>
+       <td>{{ unidad.Precio_Compra|stringformat:"0.2f" }}</td>
+<td>{{ unidad.Ganancia }}%</td>
+<td>{{ unidad.Precio_Venta|stringformat:"0.2f" }}</td>
+
+
+
+        <td>
+          <div class="btn-group" role="group">
+            <!-- Botón Editar -->
+            <button class="btn btn-warning btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalEditarUnidadMedida{{ unidad.Id_UnidadMedida }}">
+              <i class="fa fa-edit"></i>
+            </button>
+            <!-- Botón Eliminar -->
+            <button class="btn btn-danger btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalEliminarUnidadMedida{{ unidad.Id_UnidadMedida }}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div><!-- btn-group -->
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+    
+
+<!-- Modal Agregar Unidad de Medida -->
+<div class="modal fade" id="modalUnidadMedida" tabindex="-1" aria-labelledby="modalUnidadMedidaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalUnidadMedidaLabel">Agregar Unidad de Medida</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formUnidadMedida" method="post" action="{% url 'agregar_unidad_medida' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="erroresUnidadMedida"></div>
+
+          <!-- Campo Producto -->
+          <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <div class="input-group">
+              <input type="text" id="productoNombre" class="form-control" disabled>
+              <input type="hidden" id="productoId" name="Id_Medicamento">
+              <button type="button" class="btn btn-outline-secondary abrirModalProductos">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Campo Presentación -->
+          <div class="mb-3">
+            <label for="id_NombreUnidad" class="form-label">Presentación</label>
+            {{ form.NombreUnidad }}
+          </div>
+
+          <!-- Campo Equivalencia -->
+          <div class="mb-3">
+            <label for="id_Equivalencia" class="form-label">Equivalencia</label>
+            {{ form.Equivalencia }}
+          </div>
+
+          <!-- Campo Precio Compra -->
+          <div class="mb-3">
+            <label for="id_Precio_Compra" class="form-label">Precio Compra</label>
+            {{ form.Precio_Compra }}
+          </div>
+
+          <!-- Campo Ganancia (solo lectura) -->
+          <div class="mb-3">
+            <label for="id_Ganancia" class="form-label">Ganancia (%)</label>
+            <input type="text" id="id_Ganancia" class="form-control" value="" disabled>
+          </div>
+
+          <!-- Campo Precio Venta -->
+          <div class="mb-3">
+            <label for="id_Precio_Venta" class="form-label">Precio Venta</label>
+            {{ form.Precio_Venta }}
+          </div>
+
+          <!-- Botón Guardar -->
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Includes de modales de selección -->
+{% include 'modelos_listas/modal_productos.html' %}
+
+<!-- Modal Editar Unidades De Medida -->
+{% for unidad in unidades %}
+<div class="modal fade" id="modalEditarUnidadMedida{{ unidad.Id_UnidadMedida }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Unidad de Medida</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarUnidadMedida{{ unidad.Id_UnidadMedida }}" method="post" action="{% url 'editar_unidad_medida' unidad.Id_UnidadMedida %}">
+          {% csrf_token %}
+          <div id="erroresEditarUnidadMedida{{ unidad.Id_UnidadMedida }}"></div>
+
+          <!-- Producto -->
+          <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <div class="input-group">
+              <input type="text" id="productoNombreEditar{{ unidad.Id_UnidadMedida }}" class="form-control" 
+                     value="{{ unidad.Id_Medicamento.Nombre_Medicamento }}" disabled>
+              <input type="hidden" id="productoIdEditar{{ unidad.Id_UnidadMedida }}" name="Id_Medicamento" 
+                     value="{{ unidad.Id_Medicamento.Id_Medicamento }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalProductosEditar">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Presentación -->
+          <div class="mb-3">
+            <label class="form-label">Presentación</label>
+            <input type="text" name="NombreUnidad" value="{{ unidad.NombreUnidad }}" class="form-control">
+          </div>
+
+          <!-- Equivalencia -->
+          <div class="mb-3">
+            <label class="form-label">Equivalencia</label>
+            <input type="number" name="Equivalencia" value="{{ unidad.Equivalencia }}" class="form-control">
+          </div>
+
+         <!-- Precio Compra -->
+<div class="mb-3">
+  <label class="form-label">Precio Compra</label>
+  <input type="number" step="0.01" name="Precio_Compra"
+    id="precioCompraEditar{{ unidad.Id_UnidadMedida }}"
+    value="{{ unidad.Precio_Compra|stringformat:"0.2f" }}" class="form-control">
+</div>
+
+          <!-- Ganancia -->
+          <div class="mb-3">
+            <label class="form-label">Ganancia (%)</label>
+            <input type="text" id="gananciaEditar{{ unidad.Id_UnidadMedida }}" class="form-control" 
+                   value="{{ unidad.Ganancia }}%" disabled>
+          </div>
+
+          <!-- Precio Venta -->
+<div class="mb-3">
+  <label class="form-label">Precio Venta</label>
+  <input type="number" step="0.01" name="Precio_Venta"
+    id="precioVentaEditar{{ unidad.Id_UnidadMedida }}"
+    value="{{ unidad.Precio_Venta|stringformat:"0.2f" }}" class="form-control">
+</div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- Modal Eliminar Unidad de Medida -->
+{% for unidad in unidades %}
+<div class="modal fade" id="modalEliminarUnidadMedida{{ unidad.Id_UnidadMedida }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Unidad de Medida</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar la unidad de medida 
+           <strong>{{ unidad.NombreUnidad }}</strong> 
+           del producto <strong>{{ unidad.Id_Medicamento.Nombre_Medicamento }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_unidad_medida' unidad.Id_UnidadMedida %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+
+<!-- Scripts Unidad de Medida -->
+ <!-- Script Agregar Unidad de Medida -->
+<script>
+  // Reset del formulario al cerrar el modal
+  document.getElementById('modalUnidadMedida').addEventListener('hidden.bs.modal', function () {
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('erroresUnidadMedida').innerHTML = "";
+      document.getElementById('productoNombre').value = "";
+      document.getElementById('productoId').value = "";
+      document.getElementById('id_Ganancia').value = "";
+    }
+    this.removeAttribute('data-opened');
+  });
+
+  // Envío AJAX Agregar Unidad de Medida
+  document.getElementById('formUnidadMedida').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalUnidadMedida'));
+        modal.hide();
+        document.querySelector('#toastExito .toast-body').innerHTML =
+          '<i class="fa fa-check-circle me-2"></i> Unidad de medida agregada correctamente';
+        var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+        toast.show();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        document.getElementById('erroresUnidadMedida').innerHTML =
+          "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+
+  // Abrir modal de productos desde Unidad de Medida
+  document.querySelector('.abrirModalProductos').addEventListener('click', function() {
+    document.getElementById('modalUnidadMedida').setAttribute('data-opened', 'true');
+    var modalProductos = new bootstrap.Modal(document.getElementById('modalProductos'));
+    modalProductos.show();
+  });
+
+  // 🔑 Calcular ganancia en tiempo real
+  function calcularGanancia() {
+    const compra = parseFloat(document.getElementById('id_Precio_Compra').value) || 0;
+    const venta = parseFloat(document.getElementById('id_Precio_Venta').value) || 0;
+    let ganancia = "";
+
+    if (compra > 0 && venta > 0) {
+      const porcentaje = ((venta - compra) / compra) * 100;
+      ganancia = Math.round(porcentaje) + "%";
+    }
+
+    document.getElementById('id_Ganancia').value = ganancia;
+  }
+
+  document.getElementById('id_Precio_Compra').addEventListener('input', calcularGanancia);
+  document.getElementById('id_Precio_Venta').addEventListener('input', calcularGanancia);
+</script>
+
+
+<!-- Scripts Editar Unidad de Medida -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // Envío AJAX Editar Unidad de Medida
+  document.querySelectorAll('[id^="formEditarUnidadMedida"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Unidad de medida actualizada correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          const erroresDiv = this.querySelector('[id^="erroresEditarUnidadMedida"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+        }
+      });
+    });
+  });
+
+  // Abrir modal Productos Editar
+  document.querySelectorAll('.abrirModalProductosEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[id^="modalEditarUnidadMedida"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          bootstrap.Modal.getInstance(modal).hide();
+          modal.setAttribute('data-opened', 'true');
+        }
+      });
+      new bootstrap.Modal(document.getElementById('modalProductosEditar')).show();
+    });
+  });
+
+  // Seleccionar Producto en Editar (delegación)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.seleccionarProductoEditar');
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const nombre = btn.dataset.nombre;
+
+    document.querySelectorAll('[id^="modalEditarUnidadMedida"]').forEach(modal => {
+      if (modal.getAttribute('data-opened') === 'true') {
+        const unidadId = modal.id.replace('modalEditarUnidadMedida', '');
+        document.getElementById('productoIdEditar' + unidadId).value = id;
+        document.getElementById('productoNombreEditar' + unidadId).value = nombre;
+        bootstrap.Modal.getInstance(document.getElementById('modalProductosEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+        modal.removeAttribute('data-opened');
+      }
+    });
+  });
+
+  // Calcular ganancia en tiempo real en Editar
+  document.querySelectorAll('[id^="precioCompraEditar"]').forEach(input => {
+    input.addEventListener('input', function() {
+      const unidadId = this.id.replace('precioCompraEditar', '');
+      calcularGananciaEditar(unidadId);
+    });
+  });
+  document.querySelectorAll('[id^="precioVentaEditar"]').forEach(input => {
+    input.addEventListener('input', function() {
+      const unidadId = this.id.replace('precioVentaEditar', '');
+      calcularGananciaEditar(unidadId);
+    });
+  });
+
+  function calcularGananciaEditar(unidadId) {
+    const compra = parseFloat(document.getElementById('precioCompraEditar' + unidadId).value) || 0;
+    const venta = parseFloat(document.getElementById('precioVentaEditar' + unidadId).value) || 0;
+    let ganancia = "";
+    if (compra > 0 && venta > 0) {
+      const porcentaje = ((venta - compra) / compra) * 100;
+      ganancia = Math.round(porcentaje) + "%";
+    }
+    document.getElementById('gananciaEditar' + unidadId).value = ganancia;
+  }
+
+});
+</script>
+
+<!-- Script: Buscar General Unidades -->
+<script>
+  const buscadorUnidades = document.getElementById('buscadorUnidades');
+  buscadorUnidades.addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#tablaUnidades tbody tr");
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+{% endblock %}
+

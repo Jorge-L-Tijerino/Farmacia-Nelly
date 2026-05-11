@@ -1,0 +1,326 @@
+{% extends 'paginas/index.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    
+      <!-- Barra de búsqueda y botón agregar -->
+    <div class="d-flex justify-content-between mb-3">
+        <input type="text" id="buscadorProveedor" class="form-control w-50" placeholder="Buscar...">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProveedor">
+      <i class="fa fa-plus me-2"></i> Agregar
+    </button>
+  </div>
+
+    <!-- Tabla de Personal -->
+   <div class="d-flex justify-content-center">
+    <div class="table-responsive">
+    <table class="table table-striped text-center">
+        <thead>
+            <tr>
+                <!-- ID oculto -->
+                <th>Tipo</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Correo</th>
+                <th>Dirección</th>
+                <th>Día De Entrega</th>
+                <th>Hora De Entrega</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+             <!-- Aquí se cargarán los registros dinámicamente -->
+               {% for proveedor in proveedores %}
+    <tr>
+       <td>{{ proveedor.Tipo_Proveedor }}</td>
+        <td>{{ proveedor.Nombre_Proveedor }}</td>
+        <td>{{ proveedor.Telefono_Proveedor }}</td>
+        <td>{{ proveedor.Correo_Proveedor }}</td>
+        <td>{{ proveedor.Direccion_Proveedor }}</td>
+        <td>{{ proveedor.DiaEntrega }}</td>
+        <td>{{ proveedor.HoraEntrega|date:"h:i A" }}</td>
+        <td>{{ proveedor.Estado_Proveedor }}</td>
+        <td>
+          <div class="btn-group" role="group">
+             <!-- Botón Editar -->
+<button class="btn btn-warning btn-sm" 
+        data-bs-toggle="modal" 
+        data-bs-target="#modalEditarProveedor{{ proveedor.Id_Proveedor }}">
+  <i class="fa fa-edit"></i>
+</button>
+
+<!-- Botón Eliminar -->
+<button class="btn btn-danger btn-sm" 
+        data-bs-toggle="modal" 
+        data-bs-target="#modalEliminarProveedor{{ proveedor.Id_Proveedor }}">
+  <i class="fa fa-trash"></i>
+</button>
+
+</div> 
+              </td>
+    </tr>
+    {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Agregar Proveedor -->
+<div class="modal fade" id="modalProveedor" tabindex="-1" aria-labelledby="modalProveedorLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalProveedorLabel">Agregar Proveedor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formProveedor" method="post" action="{% url 'agregar_proveedor' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="erroresProveedor"></div>
+
+          <div class="mb-3">
+            <label for="id_Tipo_Proveedor" class="form-label">Tipo</label>
+            {{ form.Tipo_Proveedor }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Nombre_Proveedor" class="form-label">Nombre</label>
+            {{ form.Nombre_Proveedor }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Telefono_Proveedor" class="form-label">Teléfono</label>
+            {{ form.Telefono_Proveedor }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Correo_Proveedor" class="form-label">Correo</label>
+            {{ form.Correo_Proveedor }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Direccion_Proveedor" class="form-label">Dirección</label>
+            {{ form.Direccion_Proveedor }}
+          </div>
+          <div class="mb-3">
+            <label for="id_DiaEntrega" class="form-label">Día de Entrega</label>
+            {{ form.DiaEntrega }}
+          </div>
+          <div class="mb-3">
+            <label for="id_HoraEntrega" class="form-label">Hora de Entrega</label>
+            {{ form.HoraEntrega }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Estado_Proveedor" class="form-label">Estado</label>
+            {{ form.Estado_Proveedor }}
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modales Editar Proveedor -->
+{% for proveedor in proveedores %}
+<div class="modal fade" id="modalEditarProveedor{{ proveedor.Id_Proveedor }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Proveedor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarProveedor{{ proveedor.Id_Proveedor }}" method="post" action="{% url 'editar_proveedor' proveedor.Id_Proveedor %}">
+          {% csrf_token %}
+          <!-- Aquí se mostrarán los errores -->
+          <div id="erroresEditarProveedor{{ proveedor.Id_Proveedor }}"></div>
+
+          <div class="mb-3">
+            <label>Tipo</label>
+            <select name="Tipo_Proveedor" class="form-control">
+              <option value="Empresa" {% if proveedor.Tipo_Proveedor == 'Empresa' %}selected{% endif %}>Empresa</option>
+              <option value="Distribuidor" {% if proveedor.Tipo_Proveedor == 'Distribuidor' %}selected{% endif %}>Distribuidor</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label>Nombre</label>
+            <input type="text" name="Nombre_Proveedor" value="{{ proveedor.Nombre_Proveedor }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Teléfono</label>
+            <input type="text" name="Telefono_Proveedor" value="{{ proveedor.Telefono_Proveedor }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Correo</label>
+            <input type="email" name="Correo_Proveedor" value="{{ proveedor.Correo_Proveedor }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Dirección</label>
+            <input type="text" name="Direccion_Proveedor" value="{{ proveedor.Direccion_Proveedor }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Día de Entrega</label>
+            <input type="text" name="DiaEntrega" value="{{ proveedor.DiaEntrega }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Hora de Entrega</label>
+            <input type="time" name="HoraEntrega" value="{{ proveedor.HoraEntrega|date:'H:i' }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Estado</label>
+            <input type="text" name="Estado_Proveedor" value="{{ proveedor.Estado_Proveedor }}" class="form-control">
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- Modales Eliminar Proveedor -->
+{% for proveedor in proveedores %}
+<div class="modal fade" id="modalEliminarProveedor{{ proveedor.Id_Proveedor }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Proveedor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar al proveedor <strong>{{ proveedor.Nombre_Proveedor }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_proveedor' proveedor.Id_Proveedor %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- script -->
+
+<!-- Inicialización de Flatpickr para Proveedor -->
+<script>
+  flatpickr("#id_HoraEntrega", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "h:i K",   // hh:mm AM/PM
+    time_24hr: false,
+    locale: { firstDayOfWeek: 1 }
+  });
+</script>
+
+<!-- Reset del formulario al cerrar el modal de Agregar Proveedor -->
+<script>
+  document.getElementById('modalProveedor').addEventListener('hidden.bs.modal', function () {
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('erroresProveedor').innerHTML = ""; // limpia mensajes de error
+    }
+  });
+</script>
+
+<!-- Envío AJAX para Agregar Proveedor -->
+<script>
+  document.getElementById('formProveedor').addEventListener('submit', function(e) {
+    e.preventDefault(); // evita el submit normal
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalProveedor'));
+        modal.hide();
+        // Mostrar toast bonito
+        document.querySelector('#toastExito .toast-body').innerHTML =
+          '<i class="fa fa-check-circle me-2"></i> Proveedor agregado correctamente';
+        var toastEl = document.getElementById('toastExito');
+        var toast = new bootstrap.Toast(toastEl);
+        toast.show();
+
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        const erroresDiv = document.getElementById('erroresProveedor');
+        erroresDiv.innerHTML = "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+</script>
+
+<!-- Envío AJAX para Editar Proveedor -->
+<script>
+  document.querySelectorAll('[id^="formEditarProveedor"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          // Cerrar modal
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+
+          // Mostrar toast global
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Proveedor actualizado correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+
+          // Recargar tabla
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          // Mostrar errores en el div correspondiente
+          const erroresDiv = this.querySelector('[id^="erroresEditarProveedor"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+        }
+      })
+      .catch(error => console.error('Error en fetch:', error));
+    });
+  });
+</script>
+
+
+<!-- Buscar Proveedor -->
+<script>
+  document.getElementById('buscadorProveedor').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("table tbody tr");
+
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+{% endblock %}
+
+
+

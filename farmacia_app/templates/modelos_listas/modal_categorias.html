@@ -1,0 +1,146 @@
+<!-- Modal Seleccionar Categoría -->
+<div class="modal fade" id="modalCategorias" tabindex="-1" aria-labelledby="modalCategoriasLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalCategoriasLabel">Seleccionar Categoría</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador -->
+        <input type="text" id="buscadorCategorias" class="form-control mb-3" placeholder="Buscar categoría...">
+
+        <!-- Tabla de categorías -->
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Categoría</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for categoria in categorias %}
+            <tr>
+              <td>{{ categoria.Nombre_Categoria }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarCategoria px-3 py-1"
+                  data-id="{{ categoria.Id_Categoria }}"
+                  data-nombre="{{ categoria.Nombre_Categoria }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Categorías Editar -->
+<div class="modal fade" id="modalCategoriasEditar" tabindex="-1" aria-labelledby="modalCategoriasEditarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="modalCategoriasEditarLabel">Seleccionar Categoría</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscadorCategoriasEditar" class="form-control mb-3" placeholder="Buscar categoría...">
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Categoría</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+         <tbody>
+          {% for categoria in categorias %}
+          <tr>
+            <td>{{ categoria.Nombre_Categoria }}</td>
+            <td>
+              <button type="button" class="btn btn-success seleccionarCategoriaEditar px-3 py-1"
+                data-id="{{ categoria.Id_Categoria }}"
+                data-nombre="{{ categoria.Nombre_Categoria }}">
+                Seleccionar <i class="fa fa-check ms-2"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Script: Buscar Categoría -->
+<script>
+  document.getElementById('buscadorCategorias').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#modalCategorias table tbody tr");
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+
+  // Script: Seleccionar Categoría
+  document.querySelectorAll('.seleccionarCategoria').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      const nombre = this.getAttribute('data-nombre');
+      document.getElementById('categoriaId').value = id;
+      document.getElementById('categoriaNombre').value = nombre;
+
+      var modalCategorias = bootstrap.Modal.getInstance(document.getElementById('modalCategorias'));
+      modalCategorias.hide();
+
+      // Eliminar backdrop extra antes de reabrir Inventario
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+      var modalInventario = new bootstrap.Modal(document.getElementById('modalInventario'));
+      modalInventario.show();
+    });
+  });
+</script>
+
+<!-- Editar -->
+<!-- Script: Buscar y Seleccionar Categoría en Editar -->
+<script>
+  // Buscador
+  document.getElementById('buscadorCategoriasEditar').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    document.querySelectorAll("#modalCategoriasEditar table tbody tr").forEach(fila => {
+      fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+    });
+  });
+
+  // Seleccionar Categoría
+  document.querySelectorAll('.seleccionarCategoriaEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.dataset.id;
+      const nombre = this.dataset.nombre;
+
+      // Buscar el modal de edición que estaba abierto
+      document.querySelectorAll('[id^="modalEditarInventario"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          const productoId = modal.id.replace('modalEditarInventario', '');
+          document.getElementById('categoriaIdEditar' + productoId).value = id;
+          document.getElementById('categoriaNombreEditar' + productoId).value = nombre;
+
+          // Cerrar Categorías
+          bootstrap.Modal.getInstance(document.getElementById('modalCategoriasEditar')).hide();
+
+          // Eliminar backdrop extra
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+          // Reabrir el modal de edición
+          new bootstrap.Modal(modal).show();
+        }
+      });
+    });
+  });
+</script>

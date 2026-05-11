@@ -1,0 +1,149 @@
+<!-- Modal Seleccionar Lote (Caducidad) -->
+<div class="modal fade" id="modalCaducidad" tabindex="-1" aria-labelledby="modalCaducidadLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="modalCaducidadLabel">Seleccionar Lote por Fecha de Caducidad</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador -->
+        <input type="text" id="buscadorCaducidad" class="form-control mb-3" placeholder="Buscar lote...">
+
+        <!-- Tabla de lotes -->
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Fecha Caducidad</th>
+              <th>Cantidad Disponible</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lote in lotes %}
+            <tr>
+              <!-- ID oculto -->
+              <td style="display:none;">{{ lote.Id_Lote }}</td>
+              <td>{{ lote.FechaCaducidad }}</td>
+              <td>{{ lote.Cantidad }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarLote px-3 py-1"
+                  data-id="{{ lote.Id_Lote }}"
+                  data-fecha="{{ lote.FechaCaducidad }}"
+                  data-cantidad="{{ lote.Cantidad }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Lote Editar (Caducidad) -->
+<div class="modal fade" id="modalCaducidadEditar" tabindex="-1" aria-labelledby="modalCaducidadEditarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="modalCaducidadEditarLabel">Seleccionar Lote por Fecha de Caducidad</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscadorCaducidadEditar" class="form-control mb-3" placeholder="Buscar lote...">
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Fecha Caducidad</th>
+              <th>Cantidad Disponible</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lote in lotes %}
+            <tr>
+              <!-- ID oculto -->
+              <td style="display:none;">{{ lote.Id_Lote }}</td>
+              <td>{{ lote.FechaCaducidad }}</td>
+              <td>{{ lote.Cantidad }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarLoteEditar px-3 py-1"
+                  data-id="{{ lote.Id_Lote }}"
+                  data-fecha="{{ lote.FechaCaducidad }}"
+                  data-cantidad="{{ lote.Cantidad }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Buscador en modal agregar (Caducidad)
+document.getElementById('buscadorCaducidad').addEventListener('keyup', function() {
+  const filtro = this.value.toLowerCase();
+  document.querySelectorAll("#modalCaducidad table tbody tr").forEach(fila => {
+    fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+  });
+});
+
+// Seleccionar lote en modal agregar
+document.addEventListener("DOMContentLoaded", function() {
+  const tablaLotes = document.querySelector("#modalCaducidad table tbody");
+  tablaLotes.addEventListener("click", function(e) {
+    if (e.target.classList.contains("seleccionarLote") || e.target.closest(".seleccionarLote")) {
+      const btn = e.target.closest(".seleccionarLote");
+      const id = btn.dataset.id;
+      const fecha = btn.dataset.fecha;
+      const cantidad = btn.dataset.cantidad;
+
+      // llenar campos ocultos
+      document.getElementById("detalleLoteId").value = id;
+      document.getElementById("detalleFechaCaducidad").value = fecha;
+      document.getElementById("detalleCantidadDisponible").value = cantidad;
+
+      bootstrap.Modal.getInstance(document.getElementById("modalCaducidad")).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    }
+  });
+});
+</script>
+
+<script>
+// Buscador en modal editar (Caducidad)
+document.getElementById('buscadorCaducidadEditar').addEventListener('keyup', function() {
+  const filtro = this.value.toLowerCase();
+  document.querySelectorAll("#modalCaducidadEditar table tbody tr").forEach(fila => {
+    fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+  });
+});
+
+// Seleccionar lote en modal editar
+document.querySelectorAll('.seleccionarLoteEditar').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const id = this.dataset.id;
+    const fecha = this.dataset.fecha;
+    const cantidad = this.dataset.cantidad;
+
+    document.querySelectorAll('[id^="modalEditarLote"]').forEach(modal => {
+      if (modal.classList.contains('show')) {
+        const loteId = modal.id.replace('modalEditarLote', '');
+        document.getElementById('loteIdEditar' + loteId).value = id;
+        document.getElementById('loteFechaEditar' + loteId).value = fecha;
+        document.getElementById('loteCantidadEditar' + loteId).value = cantidad;
+
+        bootstrap.Modal.getInstance(document.getElementById('modalCaducidadEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+      }
+    });
+  });
+});
+</script>

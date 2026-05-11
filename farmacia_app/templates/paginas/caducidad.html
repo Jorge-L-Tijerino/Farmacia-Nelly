@@ -1,0 +1,374 @@
+{% extends 'paginas/index.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <!-- Barra de búsqueda y botón agregar -->
+  <div class="d-flex justify-content-between mb-3">
+    <div class="d-flex w-75 gap-3">
+      <input type="text" id="buscadorLotes" class="form-control w-50" placeholder="Buscar lote...">
+      <!-- Filtro -->
+      <select id="filtroCaducidad" class="form-select w-auto">
+      <option value="todas">Todas</option>
+      <option value="por-expirar">Por Expirar</option>
+      <option value="expirado">Expirado</option>
+    </select>
+  </div>
+        <!-- Boton Agregar -->
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarLote">
+        <i class="fa fa-plus me-2"></i> Agregar
+      </button>
+  </div>
+
+  <!-- Tabla Lotes de Producto -->
+<div class="d-flex justify-content-center">
+  <table id="tablaLotes" class="table table-striped text-center">
+    <thead>
+      <tr>
+        <th style="display:none;">ID</th>
+        <th>Producto</th>
+        <th>Fecha Ingreso</th>
+        <th>Fecha Caducidad</th>
+        <th>Cantidad</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lote in lotes %}
+      <tr
+        {% if lote.FechaCaducidad < today %}
+          class="table-danger estado-expirado"
+        {% elif lote.FechaCaducidad <= un_mes_despues %}
+          class="table-warning estado-por-expirar"
+        {% endif %}
+      >
+        <td style="display:none;">{{ lote.Id_Lote }}</td>
+        <td>{{ lote.Id_Medicamento.Nombre_Medicamento }}</td>
+        <td>{{ lote.FechaIngreso }}</td>
+        <td>{{ lote.FechaCaducidad }}</td>
+        <td>{{ lote.Cantidad }}</td>
+        <td>
+          <div class="btn-group" role="group">
+            <!-- Botón Editar -->
+            <button class="btn btn-warning btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalEditarLote{{ lote.Id_Lote }}">
+              <i class="fa fa-edit"></i>
+            </button>
+            <!-- Botón Eliminar -->
+            <button class="btn btn-danger btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalEliminarLote{{ lote.Id_Lote }}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div> <!-- btn-group -->
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+<!-- Modal Agregar Lote -->
+<div class="modal fade" id="modalAgregarLote" tabindex="-1" aria-labelledby="modalAgregarLoteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalAgregarLoteLabel">Agregar Lote</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formAgregarLote" method="post" action="{% url 'agregar_lote' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="erroresLote"></div>
+
+          <!-- Campo Producto -->
+          <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <div class="input-group">
+              <input type="text" id="productoNombre" class="form-control" disabled>
+              <input type="hidden" id="productoId" name="Id_Medicamento">
+              <button type="button" class="btn btn-outline-secondary abrirModalProductos">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Campo Fecha Ingreso -->
+          <div class="mb-3">
+            <label for="id_FechaIngreso" class="form-label">Fecha de Ingreso</label>
+            {{ form.FechaIngreso }}
+          </div>
+
+          <!-- Campo Fecha Caducidad -->
+          <div class="mb-3">
+            <label for="id_FechaCaducidad" class="form-label">Fecha de Caducidad</label>
+            {{ form.FechaCaducidad }}
+          </div>
+
+          <!-- Campo Cantidad -->
+          <div class="mb-3">
+            <label for="id_Cantidad" class="form-label">Cantidad</label>
+            {{ form.Cantidad }}
+          </div>
+
+          <!-- Botón Guardar -->
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Includes de modales de selección -->
+{% include 'modelos_listas/modal_productos.html' %}
+
+<!-- Modal Editar Lote -->
+{% for lote in lotes %}
+<div class="modal fade" id="modalEditarLote{{ lote.Id_Lote }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Lote</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarLote{{ lote.Id_Lote }}" method="post" action="{% url 'editar_lote' lote.Id_Lote %}">
+          {% csrf_token %}
+          <div id="erroresEditarLote{{ lote.Id_Lote }}"></div>
+
+          <!-- Producto -->
+          <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <div class="input-group">
+              <input type="text" id="productoNombreEditar{{ lote.Id_Lote }}" class="form-control"
+                     value="{{ lote.Id_Medicamento.Nombre_Medicamento }}" disabled>
+              <input type="hidden" id="productoIdEditar{{ lote.Id_Lote }}" name="Id_Medicamento"
+                     value="{{ lote.Id_Medicamento.Id_Medicamento }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalProductosEditar">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Fecha Ingreso -->
+          <div class="mb-3">
+            <label class="form-label">Fecha de Ingreso</label>
+            <input type="date" name="FechaIngreso" value="{{ lote.FechaIngreso|date:'Y-m-d' }}" class="form-control">
+          </div>
+
+          <!-- Fecha Caducidad -->
+          <div class="mb-3">
+            <label class="form-label">Fecha de Caducidad</label>
+            <input type="date" name="FechaCaducidad" value="{{ lote.FechaCaducidad|date:'Y-m-d' }}" class="form-control">
+          </div>
+
+          <!-- Cantidad -->
+          <div class="mb-3">
+            <label class="form-label">Cantidad</label>
+            <input type="number" name="Cantidad" value="{{ lote.Cantidad }}" class="form-control">
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- Modal Eliminar Lote -->
+{% for lote in lotes %}
+<div class="modal fade" id="modalEliminarLote{{ lote.Id_Lote }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Lote</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar el lote del producto 
+           <strong>{{ lote.Id_Medicamento.Nombre_Medicamento }}</strong> 
+           con fecha de caducidad <strong>{{ lote.FechaCaducidad|date:"d \\d\\e F \\d\\e Y" }}</strong> 
+           y cantidad <strong>{{ lote.Cantidad }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_lote' lote.Id_Lote %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+
+<!-- Scripts Caducidad -->
+
+<!-- Scripts Caducidad Agregar-->
+<script>
+  // Reset del formulario al cerrar el modal
+  document.getElementById('modalAgregarLote').addEventListener('hidden.bs.modal', function () {
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('erroresLote').innerHTML = "";
+      document.getElementById('productoNombre').value = "";
+      document.getElementById('productoId').value = "";
+    }
+    this.removeAttribute('data-opened');
+  });
+
+  // Envío AJAX Agregar Lote
+  document.getElementById('formAgregarLote').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarLote'));
+        modal.hide();
+        document.querySelector('#toastExito .toast-body').innerHTML =
+          '<i class="fa fa-check-circle me-2"></i> Lote agregado correctamente';
+        var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+        toast.show();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        document.getElementById('erroresLote').innerHTML =
+          "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+
+  // Abrir modal de productos desde Caducidad
+  document.querySelector('.abrirModalProductos').addEventListener('click', function() {
+    document.getElementById('modalAgregarLote').setAttribute('data-opened', 'true');
+    var modalProductos = new bootstrap.Modal(document.getElementById('modalProductos'));
+    modalProductos.show();
+  });
+</script>
+
+<!-- Scripts Caducidad Editar-->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // Envío AJAX Editar Lote
+  document.querySelectorAll('[id^="formEditarLote"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Lote actualizado correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          const erroresDiv = this.querySelector('[id^="erroresEditarLote"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+        }
+      });
+    });
+  });
+
+  // Abrir modal Productos Editar
+  document.querySelectorAll('.abrirModalProductosEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[id^="modalEditarLote"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          bootstrap.Modal.getInstance(modal).hide();
+          modal.setAttribute('data-opened', 'true');
+        }
+      });
+      new bootstrap.Modal(document.getElementById('modalProductosEditar')).show();
+    });
+  });
+
+  // Seleccionar Producto en Editar (delegación)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.seleccionarProductoEditar');
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const nombre = btn.dataset.nombre;
+
+    document.querySelectorAll('[id^="modalEditarLote"]').forEach(modal => {
+      if (modal.getAttribute('data-opened') === 'true') {
+        const loteId = modal.id.replace('modalEditarLote', '');
+        document.getElementById('productoIdEditar' + loteId).value = id;
+        document.getElementById('productoNombreEditar' + loteId).value = nombre;
+        bootstrap.Modal.getInstance(document.getElementById('modalProductosEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+        modal.removeAttribute('data-opened');
+      }
+    });
+  });
+
+});
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const buscador = document.getElementById("buscadorLotes");
+  const filtro = document.getElementById("filtroCaducidad");
+  const filas = document.querySelectorAll("#tablaLotes tbody tr");
+
+  function aplicarFiltros() {
+    const texto = buscador.value.toLowerCase();
+    const tipo = filtro.value;
+
+    filas.forEach(fila => {
+      const contenido = fila.textContent.toLowerCase();
+      const esExpirado = fila.classList.contains("estado-expirado");
+      const esPorExpirar = fila.classList.contains("estado-por-expirar");
+
+      let visible = contenido.includes(texto);
+
+      if (tipo === "expirado") visible = visible && esExpirado;
+      else if (tipo === "por-expirar") visible = visible && esPorExpirar;
+      // "todas" muestra todo
+
+      fila.style.display = visible ? "" : "none";
+    });
+  }
+
+  buscador.addEventListener("keyup", aplicarFiltros);
+  filtro.addEventListener("change", aplicarFiltros);
+});
+</script>
+
+
+{% endblock %}

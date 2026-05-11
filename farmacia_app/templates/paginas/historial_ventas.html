@@ -1,0 +1,128 @@
+{% extends 'paginas/index.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <!-- Barra de filtros -->
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <label>Fecha inicio</label>
+      <input type="date" id="fechaInicio" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label>Fecha fin</label>
+      <input type="date" id="fechaFin" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label>Cliente</label>
+      <select id="filtroCliente" class="form-select">
+        <option value="">Todos</option>
+        {% for cliente in clientes %}
+          <option value="{{ cliente.Id_Cliente }}">{{ cliente.Nombre_Cliente }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label>Empleado</label>
+      <select id="filtroEmpleado" class="form-select">
+        <option value="">Todos</option>
+        {% for empleado in empleados %}
+          <option value="{{ empleado.Id_Empleado }}">{{ empleado.Nombre_Empleado }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Tabla Ventas -->
+  <div class="d-flex justify-content-center">
+    <table id="tablaVentas" class="table table-striped text-center">
+      <thead>
+        <tr>
+          <th style="display:none;">ID</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Empleado</th>
+          <th>Total</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for venta in ventas %}
+        <tr>
+          <td style="display:none;">{{ venta.Id_Venta }}</td>
+          <td data-fecha="{{ venta.Fecha|date:'Y-m-d' }}">{{ venta.Fecha }}</td>
+          <td data-id="{{ venta.Id_Cliente.Id_Cliente }}">
+            {{ venta.Id_Cliente.Nombre_Cliente }}
+          </td>
+          <td data-id="{{ venta.Id_Empleado.Id_Empleado }}">
+            {{ venta.Id_Empleado.Nombre_Empleado }}
+          </td>
+          <td>{{ venta.MontoTotal|floatformat:2 }}</td>
+          <td>
+            <!-- Botón Ver Detalle (PDF) -->
+            <a href="{% url 'reporte_venta_pdf' venta.Id_Venta %}" target="_blank" class="btn btn-info btn-sm">
+              <i class="fa fa-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Total de registros -->
+  <div class="mt-3 text-end">
+    <label id="totalRegistros">Total de registros: {{ ventas|length }}</label>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const fechaInicio = document.getElementById("fechaInicio");
+  const fechaFin = document.getElementById("fechaFin");
+  const filtroCliente = document.getElementById("filtroCliente");
+  const filtroEmpleado = document.getElementById("filtroEmpleado");
+  const filas = document.querySelectorAll("#tablaVentas tbody tr");
+  const totalRegistros = document.getElementById("totalRegistros");
+
+  function aplicarFiltros() {
+    const inicio = fechaInicio.value ? new Date(fechaInicio.value) : null;
+    const fin = fechaFin.value ? new Date(fechaFin.value) : null;
+    const cliente = filtroCliente.value;
+    const empleado = filtroEmpleado.value;
+
+    let contador = 0;
+
+    filas.forEach(fila => {
+      const fechaTexto = fila.children[1].getAttribute("data-fecha");
+      const clienteTexto = fila.children[2].getAttribute("data-id");
+      const empleadoTexto = fila.children[3].getAttribute("data-id");
+
+      const fecha = new Date(fechaTexto);
+      let visible = true;
+
+      if (inicio && fecha < inicio) visible = false;
+      if (fin && fecha > fin) visible = false;
+      if (cliente && clienteTexto !== cliente) visible = false;
+      if (empleado && empleadoTexto !== empleado) visible = false;
+
+      fila.style.display = visible ? "" : "none";
+      if (visible) contador++;
+    });
+
+    totalRegistros.textContent = "Total de registros: " + contador;
+  }
+
+  fechaInicio.addEventListener("change", aplicarFiltros);
+  fechaFin.addEventListener("change", aplicarFiltros);
+  filtroCliente.addEventListener("change", aplicarFiltros);
+  filtroEmpleado.addEventListener("change", aplicarFiltros);
+
+  aplicarFiltros();
+});
+</script>
+
+{% endblock %}
+
+

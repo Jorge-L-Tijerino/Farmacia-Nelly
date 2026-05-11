@@ -1,0 +1,145 @@
+<!-- Modal Seleccionar Proveedor -->
+<div class="modal fade" id="modalProveedores" tabindex="-1" aria-labelledby="modalProveedoresLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalProveedoresLabel">Seleccionar Proveedor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador -->
+        <input type="text" id="buscadorProveedores" class="form-control mb-3" placeholder="Buscar proveedor...">
+
+        <!-- Tabla de proveedores -->
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Proveedor</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for proveedor in proveedores %}
+            <tr>
+              <td>{{ proveedor.Nombre_Proveedor }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarProveedor px-3 py-1"
+                  data-id="{{ proveedor.Id_Proveedor }}"
+                  data-nombre="{{ proveedor.Nombre_Proveedor }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Proveedores Editar -->
+<div class="modal fade" id="modalProveedoresEditar" tabindex="-1" aria-labelledby="modalProveedoresEditarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="modalProveedoresEditarLabel">Seleccionar Proveedor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscadorProveedoresEditar" class="form-control mb-3" placeholder="Buscar proveedor...">
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Proveedor</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for proveedor in proveedores %}
+            <tr>
+              <td>{{ proveedor.Nombre_Proveedor }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarProveedorEditar px-3 py-1"
+                  data-id="{{ proveedor.Id_Proveedor }}"
+                  data-nombre="{{ proveedor.Nombre_Proveedor }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script: Buscar Proveedor -->
+<script>
+  document.getElementById('buscadorProveedores').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#modalProveedores table tbody tr");
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+
+  // Script: Seleccionar Proveedor
+  document.querySelectorAll('.seleccionarProveedor').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      const nombre = this.getAttribute('data-nombre');
+      document.getElementById('proveedorId').value = id;
+      document.getElementById('proveedorNombre').value = nombre;
+
+      var modalProveedores = bootstrap.Modal.getInstance(document.getElementById('modalProveedores'));
+      modalProveedores.hide();
+
+      // Eliminar backdrop extra antes de reabrir Inventario
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+      var modalInventario = new bootstrap.Modal(document.getElementById('modalInventario'));
+      modalInventario.show();
+    });
+  });
+</script>
+
+<!-- Editar -->
+<!-- Script: Buscar y Seleccionar Proveedor en Editar -->
+<script>
+  // Buscador
+  document.getElementById('buscadorProveedoresEditar').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    document.querySelectorAll("#modalProveedoresEditar table tbody tr").forEach(fila => {
+      fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+    });
+  });
+
+  // Seleccionar Proveedor
+  document.querySelectorAll('.seleccionarProveedorEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.dataset.id;
+      const nombre = this.dataset.nombre;
+
+      // Buscar el modal de edición que estaba abierto
+      document.querySelectorAll('[id^="modalEditarInventario"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          const productoId = modal.id.replace('modalEditarInventario', '');
+          document.getElementById('proveedorIdEditar' + productoId).value = id;
+          document.getElementById('proveedorNombreEditar' + productoId).value = nombre;
+
+          // Cerrar Proveedores
+          bootstrap.Modal.getInstance(document.getElementById('modalProveedoresEditar')).hide();
+
+          // Eliminar backdrop extra
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+          // Reabrir el modal de edición
+          new bootstrap.Modal(modal).show();
+        }
+      });
+    });
+  });
+</script>

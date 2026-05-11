@@ -1,0 +1,312 @@
+{% extends 'paginas/index.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    
+  <!-- Barra de búsqueda y botón agregar -->
+  <div class="d-flex justify-content-between mb-3">
+    <input type="text" id="buscador" class="form-control w-50" placeholder="Buscar...">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPersonal">
+      <i class="fa fa-plus me-2"></i> Agregar
+    </button>
+  </div>
+
+  <!-- Tabla de Personal -->
+  <div class="d-flex justify-content-center">
+    <table class="table table-striped text-center">
+      <thead>
+        <tr>
+          <th>Nombre Completo</th>
+          <th>Cédula</th>
+          <th>Teléfono</th>
+          <th>Días de Trabajo</th>
+          <th>Hora de Entrada</th>
+          <th>Hora de Salida</th>
+          <th>Turno</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for empleado in empleados %}
+        <tr>
+          <td>{{ empleado.Nombre_Empleado }}</td>
+          <td>{{ empleado.Cedula_Empleado }}</td>
+          <td>{{ empleado.Telefono_Empleado }}</td>
+          <td>{{ empleado.DiasTrabajo }}</td>
+          <td>{{ empleado.HoraEntrada|date:"h:i A" }}</td>
+          <td>{{ empleado.HoraSalida|date:"h:i A" }}</td>
+          <td>{{ empleado.Turno }}</td>
+          <td>
+            <div class="btn-group" role="group">
+              <!-- Botón Editar -->
+              <button class="btn btn-warning btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#modalEditarPersonal{{ empleado.Id_Empleado }}">
+                <i class="fa fa-edit"></i>
+              </button>
+
+              <!-- Botón Eliminar -->
+              <button class="btn btn-danger btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#modalEliminarPersonal{{ empleado.Id_Empleado }}">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div> 
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Agregar Personal -->
+<div class="modal fade" id="modalPersonal" tabindex="-1" aria-labelledby="modalPersonalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalPersonalLabel">Agregar Personal</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formPersonal" method="post" action="{% url 'agregar_personal' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="errores"></div>
+
+          <div class="mb-3">
+            <label for="id_Nombre_Empleado" class="form-label">Nombre Completo</label>
+            {{ form.Nombre_Empleado }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Cedula_Empleado" class="form-label">Cédula</label>
+            {{ form.Cedula_Empleado }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Telefono_Empleado" class="form-label">Teléfono</label>
+            {{ form.Telefono_Empleado }}
+          </div>
+          <div class="mb-3">
+            <label for="id_DiasTrabajo" class="form-label">Días de Trabajo</label>
+            {{ form.DiasTrabajo }}
+          </div>
+          <div class="mb-3">
+            <label for="id_HoraEntrada" class="form-label">Hora de Entrada</label>
+            {{ form.HoraEntrada }}
+          </div>
+          <div class="mb-3">
+            <label for="id_HoraSalida" class="form-label">Hora de Salida</label>
+            {{ form.HoraSalida }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Turno" class="form-label">Turno</label>
+            {{ form.Turno }}
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modales Editar -->
+{% for empleado in empleados %}
+<div class="modal fade" id="modalEditarPersonal{{ empleado.Id_Empleado }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Personal</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditar{{ empleado.Id_Empleado }}" method="post" action="{% url 'editar_personal' empleado.Id_Empleado %}">
+          {% csrf_token %}
+          <!-- Aquí se mostrarán los errores -->
+          <div id="erroresEditar{{ empleado.Id_Empleado }}"></div>
+
+          <div class="mb-3">
+            <label>Nombre Completo</label>
+            <input type="text" name="Nombre_Empleado" value="{{ empleado.Nombre_Empleado }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Cédula</label>
+            <input type="text" name="Cedula_Empleado" value="{{ empleado.Cedula_Empleado }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Teléfono</label>
+            <input type="text" name="Telefono_Empleado" value="{{ empleado.Telefono_Empleado }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Días de Trabajo</label>
+            <input type="text" name="DiasTrabajo" value="{{ empleado.DiasTrabajo }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Hora de Entrada</label>
+            <input type="time" name="HoraEntrada" value="{{ empleado.HoraEntrada|date:'H:i' }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Hora de Salida</label>
+            <input type="time" name="HoraSalida" value="{{ empleado.HoraSalida|date:'H:i' }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Turno</label>
+            <select name="Turno" class="form-control">
+              <option value="Matutino" {% if empleado.Turno == 'Matutino' %}selected{% endif %}>Matutino</option>
+              <option value="Vespertino" {% if empleado.Turno == 'Vespertino' %}selected{% endif %}>Vespertino</option>
+              <option value="Nocturno" {% if empleado.Turno == 'Nocturno' %}selected{% endif %}>Nocturno</option>
+            </select>
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Modales Eliminar -->
+{% for empleado in empleados %}
+<div class="modal fade" id="modalEliminarPersonal{{ empleado.Id_Empleado }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Personal</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar a <strong>{{ empleado.Nombre_Empleado }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_personal' empleado.Id_Empleado %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- script -->
+
+<!-- Inicialización de Flatpickr -->
+<script>
+  flatpickr("#id_HoraEntrada", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "h:i K",   // hh:mm AM/PM
+    time_24hr: false,
+    locale: { firstDayOfWeek: 1 }
+  });
+
+  flatpickr("#id_HoraSalida", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "h:i K",
+    time_24hr: false,
+    locale: { firstDayOfWeek: 1 }
+  });
+</script>
+
+<!-- Reset del formulario al cerrar el modal de Agregar -->
+<script>
+  document.getElementById('modalPersonal').addEventListener('hidden.bs.modal', function () {
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('errores').innerHTML = ""; // limpia mensajes de error
+    }
+  });
+</script>
+
+<!-- Envío AJAX para Agregar -->
+<script>
+  document.getElementById('formPersonal').addEventListener('submit', function(e) {
+    e.preventDefault(); // evita el submit normal
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+      var modal = bootstrap.Modal.getInstance(document.getElementById('modalPersonal'));
+      modal.hide();
+      // Mostrar toast bonito
+      document.querySelector('#toastExito .toast-body').innerHTML = 
+        '<i class="fa fa-check-circle me-2"></i> Empleado agregado correctamente';
+      var toastEl = document.getElementById('toastExito');
+      var toast = new bootstrap.Toast(toastEl);
+      toast.show();
+
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      const erroresDiv = document.getElementById('errores');
+      erroresDiv.innerHTML = "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+    }
+  });
+});
+</script>
+
+<!-- Envío AJAX para Editar -->
+<script>
+  document.querySelectorAll('[id^="formEditar"]').forEach(form => {
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const data = new FormData(this);
+
+    fetch(this.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+        modal.hide();
+        document.querySelector('#toastExito .toast-body').innerHTML =
+          '<i class="fa fa-check-circle me-2"></i> Empleado actualizado correctamente';
+        var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+        toast.show();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        // Aquí se asegura que el div de errores tenga el mismo sufijo Id_Empleado
+        const erroresDiv = this.querySelector('[id^="erroresEditar"]');
+        erroresDiv.innerHTML =
+          "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+});
+</script>
+
+
+<!-- Buscar -->
+<script>
+  document.getElementById('buscador').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("table tbody tr");
+
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+
+{% endblock %}
+

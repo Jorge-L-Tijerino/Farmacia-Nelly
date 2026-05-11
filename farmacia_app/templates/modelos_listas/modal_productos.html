@@ -1,0 +1,152 @@
+<!-- Modal Seleccionar Producto -->
+<div class="modal fade" id="modalProductos" tabindex="-1" aria-labelledby="modalProductosLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalProductosLabel">Seleccionar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador -->
+        <input type="text" id="buscadorProductos" class="form-control mb-3" placeholder="Buscar producto...">
+
+        <!-- Tabla de productos -->
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Producto</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+            <tr>
+              <td>{{ producto.Nombre_Medicamento }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarProducto px-3 py-1"
+                  data-id="{{ producto.Id_Medicamento }}"
+                  data-nombre="{{ producto.Nombre_Medicamento }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Productos Editar -->
+<div class="modal fade" id="modalProductosEditar" tabindex="-1" aria-labelledby="modalProductosEditarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="modalProductosEditarLabel">Seleccionar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscadorProductosEditar" class="form-control mb-3" placeholder="Buscar producto...">
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Producto</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+            <tr>
+              <td>{{ producto.Nombre_Medicamento }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarProductoEditar px-3 py-1"
+                  data-id="{{ producto.Id_Medicamento }}"
+                  data-nombre="{{ producto.Nombre_Medicamento }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Script: Buscar Producto -->
+<script>
+  document.getElementById('buscadorProductos').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#modalProductos table tbody tr");
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+
+  // Script: Seleccionar Producto
+  document.addEventListener("DOMContentLoaded", function() {
+    const tablaProductos = document.querySelector("#modalProductos table tbody");
+    tablaProductos.addEventListener("click", function(e) {
+      if (e.target.classList.contains("seleccionarProducto") || e.target.closest(".seleccionarProducto")) {
+        const btn = e.target.closest(".seleccionarProducto");
+        const id = btn.getAttribute("data-id");
+        const nombre = btn.getAttribute("data-nombre");
+
+        document.getElementById("productoId").value = id;
+        document.getElementById("productoNombre").value = nombre;
+
+        var modalProductos = bootstrap.Modal.getInstance(document.getElementById("modalProductos"));
+        modalProductos.hide();
+
+        // Eliminar backdrop extra antes de reabrir el modal principal
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+        // Si querés reabrir el modal de Unidad de Medida automáticamente:
+        var modalUnidad = new bootstrap.Modal(document.getElementById('modalUnidadMedida'));
+        modalUnidad.show();
+      }
+    });
+  });
+</script>
+
+<!-- Editar -->
+<!-- Script: Buscar y Seleccionar Producto en Editar -->
+<script>
+  // Buscador
+  document.getElementById('buscadorProductosEditar').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    document.querySelectorAll("#modalProductosEditar table tbody tr").forEach(fila => {
+      fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+    });
+  });
+
+  // Seleccionar Producto
+  document.querySelectorAll('.seleccionarProductoEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.dataset.id;
+      const nombre = this.dataset.nombre;
+
+      // Buscar el modal de edición que estaba abierto
+      document.querySelectorAll('[id^="modalEditarUnidadMedida"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          const unidadId = modal.id.replace('modalEditarUnidadMedida', '');
+          document.getElementById('productoIdEditar' + unidadId).value = id;
+          document.getElementById('productoNombreEditar' + unidadId).value = nombre;
+
+          // Cerrar Productos
+          bootstrap.Modal.getInstance(document.getElementById('modalProductosEditar')).hide();
+
+          // Eliminar backdrop extra
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+          // Reabrir el modal de edición
+          new bootstrap.Modal(modal).show();
+        }
+      });
+    });
+  });
+</script>

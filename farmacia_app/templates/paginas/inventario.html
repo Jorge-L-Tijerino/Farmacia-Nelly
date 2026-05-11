@@ -1,0 +1,505 @@
+{% extends 'paginas/index.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <!-- Barra de búsqueda y botón agregar -->
+  <div class="d-flex justify-content-between mb-3">
+      <input type="text" id="buscadorInventario" class="form-control w-50" placeholder="Buscar...">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalInventario">
+        <i class="fa fa-plus me-2"></i> Agregar
+      </button>
+  </div>
+
+  <!-- Tabla Inventario -->
+  <div class="d-flex justify-content-center">
+    <div class="table-responsive">
+      <table id="tablaInventario" class="table table-striped text-center">
+        <thead>
+          <tr>
+              <th style="display:none;">ID</th> <!-- Oculto -->
+              <th>Producto</th>
+              <th>Descripción</th>
+              <th>Proveedor</th>
+              <th>Categoría</th>
+              <th>Stock</th>
+              <th>Precio Compra</th>
+              <th>Precio Venta</th>
+              <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for producto in productos %}
+          <tr>
+              <td style="display:none;">{{ producto.Id_Medicamento }}</td>
+              <td>{{ producto.Nombre_Medicamento }}</td>
+              <td>{{ producto.Descripcion }}</td>
+              <td>{{ producto.Id_Proveedor.Nombre_Proveedor }}</td>
+              <td>{{ producto.Id_Categoria.Nombre_Categoria }}</td>
+              <td>{{ producto.Stock }}</td>
+              <!-- Precio Compra desde presentación Unidad -->
+              <td>
+                {% if producto.precio_compra %}
+                  {{ producto.precio_compra }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <!-- Precio Venta desde presentación Unidad -->
+              <td>
+                {% if producto.precio_venta %}
+                  {{ producto.precio_venta }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <!-- Botón Editar -->
+                  <button class="btn btn-warning btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalEditarInventario{{ producto.Id_Medicamento }}">
+                    <i class="fa fa-edit"></i>
+                  </button>
+
+                  <!-- Botón Eliminar -->
+                  <button class="btn btn-danger btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalEliminarInventario{{ producto.Id_Medicamento }}">
+                    <i class="fa fa-trash"></i>
+                  </button>
+
+                  <!-- Botón Ver Precios -->
+                  <button class="btn btn-info btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalVerPrecios{{ producto.Id_Medicamento }}">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                </div>
+              </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+
+<!-- Modal Agregar Inventario -->
+<div class="modal fade" id="modalInventario" tabindex="-1" aria-labelledby="modalInventarioLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalInventarioLabel">Agregar Producto al Inventario</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formInventario" method="post" action="{% url 'agregar_inventario' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="erroresInventario"></div>
+
+          <!-- Campo Producto -->
+          <div class="mb-3">
+            <label for="id_Nombre_Medicamento" class="form-label">Producto</label>
+            {{ form.Nombre_Medicamento }}
+          </div>
+
+          <!-- Campo Descripción -->
+          <div class="mb-3">
+            <label for="id_Descripcion" class="form-label">Descripción</label>
+            {{ form.Descripcion }}
+          </div>
+
+          <!-- Campo Proveedor -->
+          <div class="mb-3">
+            <label class="form-label">Proveedor</label>
+            <div class="input-group">
+              <input type="text" id="proveedorNombre" class="form-control" disabled>
+              <input type="hidden" id="proveedorId" name="Id_Proveedor">
+              <button type="button" class="btn btn-outline-secondary abrirModalProveedores">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Campo Categoría -->
+          <div class="mb-3">
+            <label class="form-label">Categoría</label>
+            <div class="input-group">
+              <input type="text" id="categoriaNombre" class="form-control" disabled>
+              <input type="hidden" id="categoriaId" name="Id_Categoria">
+              <button type="button" class="btn btn-outline-secondary abrirModalCategorias">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Campo Stock -->
+          <div class="mb-3">
+            <label for="id_Stock" class="form-label">Stock</label>
+            {{ form.Stock }}
+          </div>
+
+          <!-- Botón Guardar -->
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Includes de modales de selección -->
+{% include 'modelos_listas/modal_proveedores.html' %}
+{% include 'modelos_listas/modal_categorias.html' %}
+
+
+<!-- Modal Editar Inventario -->
+{% for producto in productos %}
+<div class="modal fade" id="modalEditarInventario{{ producto.Id_Medicamento }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarInventario{{ producto.Id_Medicamento }}" method="post" action="{% url 'editar_inventario' producto.Id_Medicamento %}">
+          {% csrf_token %}
+          <div id="erroresEditarInventario{{ producto.Id_Medicamento }}"></div>
+
+          <!-- Producto -->
+          <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <input type="text" name="Nombre_Medicamento" value="{{ producto.Nombre_Medicamento }}" class="form-control">
+          </div>
+
+          <!-- Descripción -->
+          <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <input type="text" name="Descripcion" value="{{ producto.Descripcion }}" class="form-control">
+          </div>
+
+          <!-- Proveedor -->
+          <div class="mb-3">
+            <label class="form-label">Proveedor</label>
+            <div class="input-group">
+              <input type="text" id="proveedorNombreEditar{{ producto.Id_Medicamento }}" class="form-control" value="{{ producto.Id_Proveedor.Nombre_Proveedor }}" disabled>
+              <input type="hidden" id="proveedorIdEditar{{ producto.Id_Medicamento }}" name="Id_Proveedor" value="{{ producto.Id_Proveedor.Id_Proveedor }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalProveedoresEditar">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Categoría -->
+          <div class="mb-3">
+            <label class="form-label">Categoría</label>
+            <div class="input-group">
+              <input type="text" id="categoriaNombreEditar{{ producto.Id_Medicamento }}" class="form-control" value="{{ producto.Id_Categoria.Nombre_Categoria }}" disabled>
+              <input type="hidden" id="categoriaIdEditar{{ producto.Id_Medicamento }}" name="Id_Categoria" value="{{ producto.Id_Categoria.Id_Categoria }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalCategoriasEditar">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Stock -->
+          <div class="mb-3">
+            <label class="form-label">Stock</label>
+            <input type="number" name="Stock" value="{{ producto.Stock }}" class="form-control">
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- Modal Eliminar Inventario -->
+{% for producto in productos %}
+<div class="modal fade" id="modalEliminarInventario{{ producto.Id_Medicamento }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar el producto 
+           <strong>{{ producto.Nombre_Medicamento }}</strong> 
+           del inventario?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_inventario' producto.Id_Medicamento %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Modal Ver Unidades de Medida (Precios) -->
+{% for producto in productos %}
+<div class="modal fade" id="modalVerPrecios{{ producto.Id_Medicamento }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title">Presentaciones de {{ producto.Nombre_Medicamento }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-striped text-center align-middle">
+            <thead>
+              <tr>
+                <th style="display:none;">ID</th>
+                <th>Producto</th>
+                <th>Presentación</th>
+                <th>Precio Compra</th>
+                <th>Ganancia</th>
+                <th>Precio Venta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for unidad in producto.unidades %}
+              <tr>
+                <td style="display:none;">{{ unidad.Id_UnidadMedida }}</td>
+                <td>{{ unidad.Id_Medicamento.Nombre_Medicamento }}</td>
+                <td>{{ unidad.NombreUnidad }}</td>
+                <td>{{ unidad.Precio_Compra }}</td>
+                <td>{{ unidad.Ganancia }}%</td>
+                <td>{{ unidad.Precio_Venta }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6">No hay presentaciones registradas</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+
+<!-- Scripts Inventario -->
+<!-- Reset del formulario al cerrar el modal Inventario -->
+<script>
+  document.getElementById('modalInventario').addEventListener('hidden.bs.modal', function () {
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('erroresInventario').innerHTML = "";
+      document.getElementById('proveedorNombre').value = "";
+      document.getElementById('proveedorId').value = "";
+      document.getElementById('categoriaNombre').value = "";
+      document.getElementById('categoriaId').value = "";
+    }
+    // 🔑 siempre quitar el flag data-opened
+    this.removeAttribute('data-opened');
+  });
+</script>
+
+<!-- Reset al cerrar modales de selección (lupas) -->
+<script>
+  // Proveedores
+  document.getElementById('modalProveedores').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('buscadorProveedores').value = "";
+    document.querySelectorAll("#modalProveedores table tbody tr").forEach(fila => {
+      fila.style.display = "";
+    });
+  });
+
+  // Categorías
+  document.getElementById('modalCategorias').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('buscadorCategorias').value = "";
+    document.querySelectorAll("#modalCategorias table tbody tr").forEach(fila => {
+      fila.style.display = "";
+    });
+  });
+</script>
+
+<!-- Envío AJAX y abrir modales -->
+<script>
+  // Envío AJAX Agregar Inventario
+  document.getElementById('formInventario').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalInventario'));
+        modal.hide();
+        document.querySelector('#toastExito .toast-body').innerHTML =
+          '<i class="fa fa-check-circle me-2"></i> Producto agregado correctamente';
+        var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+        toast.show();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        document.getElementById('erroresInventario').innerHTML =
+          "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+
+  // Abrir modal de proveedores desde Inventario
+  document.querySelector('.abrirModalProveedores').addEventListener('click', function() {
+    document.getElementById('modalInventario').setAttribute('data-opened', 'true');
+    var modalProveedores = new bootstrap.Modal(document.getElementById('modalProveedores'));
+    modalProveedores.show();
+  });
+
+  // Abrir modal de categorías desde Inventario
+  document.querySelector('.abrirModalCategorias').addEventListener('click', function() {
+    document.getElementById('modalInventario').setAttribute('data-opened', 'true');
+    var modalCategorias = new bootstrap.Modal(document.getElementById('modalCategorias'));
+    modalCategorias.show();
+  });
+</script>
+
+<!-- Envío AJAX y abrir modales en Editar Inventario -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // Envío AJAX Editar Inventario
+  document.querySelectorAll('[id^="formEditarInventario"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Inventario actualizado correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          const erroresDiv = this.querySelector('[id^="erroresEditarInventario"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+        }
+      });
+    });
+  });
+
+  // Abrir modal Proveedores Editar
+  document.querySelectorAll('.abrirModalProveedoresEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[id^="modalEditarInventario"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          bootstrap.Modal.getInstance(modal).hide();
+          modal.setAttribute('data-opened', 'true');
+        }
+      });
+      new bootstrap.Modal(document.getElementById('modalProveedoresEditar')).show();
+    });
+  });
+
+  // Abrir modal Categorías Editar
+  document.querySelectorAll('.abrirModalCategoriasEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[id^="modalEditarInventario"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          bootstrap.Modal.getInstance(modal).hide();
+          modal.setAttribute('data-opened', 'true');
+        }
+      });
+      new bootstrap.Modal(document.getElementById('modalCategoriasEditar')).show();
+    });
+  });
+
+  // Seleccionar Proveedor en Editar (delegación)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.seleccionarProveedorEditar');
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const nombre = btn.dataset.nombre;
+
+    document.querySelectorAll('[id^="modalEditarInventario"]').forEach(modal => {
+      if (modal.getAttribute('data-opened') === 'true') {
+        const productoId = modal.id.replace('modalEditarInventario', '');
+        document.getElementById('proveedorIdEditar' + productoId).value = id;
+        document.getElementById('proveedorNombreEditar' + productoId).value = nombre;
+        bootstrap.Modal.getInstance(document.getElementById('modalProveedoresEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+        modal.removeAttribute('data-opened');
+      }
+    });
+  });
+
+  // Seleccionar Categoría en Editar (delegación)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.seleccionarCategoriaEditar');
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const nombre = btn.dataset.nombre;
+
+    document.querySelectorAll('[id^="modalEditarInventario"]').forEach(modal => {
+      if (modal.getAttribute('data-opened') === 'true') {
+        const productoId = modal.id.replace('modalEditarInventario', '');
+        document.getElementById('categoriaIdEditar' + productoId).value = id;
+        document.getElementById('categoriaNombreEditar' + productoId).value = nombre;
+        bootstrap.Modal.getInstance(document.getElementById('modalCategoriasEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+        modal.removeAttribute('data-opened');
+      }
+    });
+  });
+
+  
+
+});
+</script>
+
+<!-- Script: Buscar General Inventario -->
+<script>
+  // Seleccionamos el input de búsqueda de inventario
+  const buscadorInventario = document.getElementById('buscadorInventario');
+
+  buscadorInventario.addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    // Seleccionamos todas las filas del tbody de la tabla principal de inventario
+    const filas = document.querySelectorAll("#tablaInventario tbody tr");
+
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,80 @@
+<!-- Modal Seleccionar Producto (Compras) -->
+<div class="modal fade" id="modalProductosCompra" tabindex="-1" aria-labelledby="modalProductosCompraLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalProductosCompraLabel">Seleccionar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador -->
+        <input type="text" id="buscadorProductosCompra" class="form-control mb-3" placeholder="Buscar producto...">
+
+        <!-- Tabla de productos -->
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Producto</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+            <tr>
+              <td>{{ producto.Nombre_Medicamento }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarProductoCompra px-3 py-1"
+                  data-id="{{ producto.Id_Medicamento }}"
+                  data-nombre="{{ producto.Nombre_Medicamento }}"
+                  data-stock="{{ producto.Stock }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Buscador en modal productos compra
+document.getElementById('buscadorProductosCompra').addEventListener('keyup', function() {
+  const filtro = this.value.toLowerCase();
+  document.querySelectorAll("#modalProductosCompra table tbody tr").forEach(fila => {
+    fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+  });
+});
+
+// Seleccionar producto en compras
+document.addEventListener("DOMContentLoaded", function() {
+  const tablaProductos = document.querySelector("#modalProductosCompra table tbody");
+  tablaProductos.addEventListener("click", function(e) {
+    if (e.target.classList.contains("seleccionarProductoCompra") || e.target.closest(".seleccionarProductoCompra")) {
+      const btn = e.target.closest(".seleccionarProductoCompra");
+      const id = btn.dataset.id;
+      const nombre = btn.dataset.nombre;
+      const stock = btn.dataset.stock;
+      const precio = btn.dataset.precio;
+
+      // llenar campos principales
+      document.getElementById("productoId").value = id;
+      document.getElementById("productoNombre").value = nombre;
+
+      // llenar modal detalle
+      document.getElementById("detalleProductoNombre").value = nombre;
+      document.getElementById("detalleStockActual").value = stock;
+      document.getElementById("detallePrecioCompra").value = precio;
+
+      // cerrar modal productos
+      bootstrap.Modal.getInstance(document.getElementById("modalProductosCompra")).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+      // abrir modal detalle
+      new bootstrap.Modal(document.getElementById("modal_detalle_producto")).show();
+    }
+  });
+});
+</script>

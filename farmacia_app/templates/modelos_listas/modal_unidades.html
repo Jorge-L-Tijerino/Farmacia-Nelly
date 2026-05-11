@@ -1,0 +1,154 @@
+<!-- Modal Seleccionar Unidad -->
+<div class="modal fade" id="modalUnidades" tabindex="-1" aria-labelledby="modalUnidadesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalUnidadesLabel">Seleccionar Unidad de Medida</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador -->
+        <input type="text" id="buscadorUnidades" class="form-control mb-3" placeholder="Buscar unidad...">
+
+        <!-- Tabla de unidades -->
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Unidad</th>
+              <th>Equivalencia</th>
+              <th>Precio Compra</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for unidad in unidades %}
+            <tr>
+              <td>{{ unidad.NombreUnidad }}</td>
+              <td>{{ unidad.Equivalencia }}</td>
+              <td>{{ unidad.Precio_Compra }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarUnidad px-3 py-1"
+                  data-id="{{ unidad.Id_UnidadMedida }}"
+                  data-nombre="{{ unidad.NombreUnidad }}"
+                  data-equivalencia="{{ unidad.Equivalencia }}"
+                  data-precio="{{ unidad.Precio_Compra }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Unidades Editar -->
+<div class="modal fade" id="modalUnidadesEditar" tabindex="-1" aria-labelledby="modalUnidadesEditarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="modalUnidadesEditarLabel">Seleccionar Unidad de Medida</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscadorUnidadesEditar" class="form-control mb-3" placeholder="Buscar unidad...">
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Unidad</th>
+              <th>Equivalencia</th>
+              <th>Precio Compra</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for unidad in unidades %}
+            <tr>
+              <td>{{ unidad.NombreUnidad }}</td>
+              <td>{{ unidad.Equivalencia }}</td>
+              <td>{{ unidad.Precio_Compra }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarUnidadEditar px-3 py-1"
+                  data-id="{{ unidad.Id_UnidadMedida }}"
+                  data-nombre="{{ unidad.NombreUnidad }}"
+                  data-equivalencia="{{ unidad.Equivalencia }}"
+                  data-precio="{{ unidad.Precio_Compra }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Buscador en modal agregar
+document.getElementById('buscadorUnidades').addEventListener('keyup', function() {
+  const filtro = this.value.toLowerCase();
+  document.querySelectorAll("#modalUnidades table tbody tr").forEach(fila => {
+    fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+  });
+});
+
+// Seleccionar unidad en modal agregar
+document.addEventListener("DOMContentLoaded", function() {
+  const tablaUnidades = document.querySelector("#modalUnidades table tbody");
+  tablaUnidades.addEventListener("click", function(e) {
+    if (e.target.classList.contains("seleccionarUnidad") || e.target.closest(".seleccionarUnidad")) {
+      const btn = e.target.closest(".seleccionarUnidad");
+      const id = btn.dataset.id;
+      const nombre = btn.dataset.nombre;
+      const equivalencia = btn.dataset.equivalencia;
+      const precio = btn.dataset.precio;
+
+      document.getElementById("detalleUnidadId").value = id;
+      document.getElementById("detalleUnidadNombre").value = nombre;
+      document.getElementById("detallePrecioCompra").value = precio;
+
+      bootstrap.Modal.getInstance(document.getElementById("modalUnidades")).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    }
+  });
+});
+</script>
+
+<script>
+    // Buscador en modal editar
+document.getElementById('buscadorUnidadesEditar').addEventListener('keyup', function() {
+  const filtro = this.value.toLowerCase();
+  document.querySelectorAll("#modalUnidadesEditar table tbody tr").forEach(fila => {
+    fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+  });
+});
+
+// Seleccionar unidad en modal editar
+document.querySelectorAll('.seleccionarUnidadEditar').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const id = this.dataset.id;
+    const nombre = this.dataset.nombre;
+    const equivalencia = this.dataset.equivalencia;
+    const precio = this.dataset.precio;
+
+    // Buscar el modal de edición que estaba abierto
+    document.querySelectorAll('[id^="modalEditarUnidadMedida"]').forEach(modal => {
+      if (modal.classList.contains('show')) {
+        const unidadId = modal.id.replace('modalEditarUnidadMedida', '');
+        document.getElementById('unidadIdEditar' + unidadId).value = id;
+        document.getElementById('unidadNombreEditar' + unidadId).value = nombre;
+        document.getElementById('unidadEquivalenciaEditar' + unidadId).value = equivalencia;
+        document.getElementById('unidadPrecioEditar' + unidadId).value = precio;
+
+        bootstrap.Modal.getInstance(document.getElementById('modalUnidadesEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+      }
+    });
+  });
+});
+</script>

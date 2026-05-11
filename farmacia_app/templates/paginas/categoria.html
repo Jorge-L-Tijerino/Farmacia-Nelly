@@ -1,0 +1,232 @@
+{% extends 'paginas/index.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    
+  <!-- Barra de búsqueda y botón agregar -->
+  <div class="d-flex justify-content-between mb-3">
+      <input type="text" id="buscador" class="form-control w-50" placeholder="Buscar...">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarCategoria">
+        <i class="fa fa-plus me-2"></i> Agregar
+      </button>
+  </div>
+
+  <!-- Tabla de Categorías -->
+  <div class="d-flex justify-content-center">
+    <table class="table table-striped text-center">
+      <thead>
+        <tr>
+          <th>Categoría</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for categoria in categorias %}
+        <tr>
+          <td>{{ categoria.Nombre_Categoria }}</td>
+          <td>
+            <div class="btn-group" role="group">
+              <!-- Botón Editar -->
+          <button class="btn btn-warning btn-sm" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#modalEditarCategoria{{ categoria.Id_Categoria }}">
+            <i class="fa fa-edit"></i>
+          </button>
+
+          <!-- Botón Eliminar -->
+          <button class="btn btn-danger btn-sm" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#modalEliminarCategoria{{ categoria.Id_Categoria }}">
+            <i class="fa fa-trash"></i>
+          </button>
+
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="2">No hay categorías registradas.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Agregar Categoría -->
+<div class="modal fade" id="modalAgregarCategoria" tabindex="-1" aria-labelledby="modalCategoriaLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalCategoriaLabel">Agregar Categoría</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formCategoria" method="post" action="{% url 'agregar_categoria' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="erroresCategoria"></div>
+
+          <div class="mb-3">
+            <label for="id_Nombre_Categoria" class="form-label">Nombre de la Categoría</label>
+            {{ form.Nombre_Categoria }}
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modales Editar -->
+{% for categoria in categorias %}
+<div class="modal fade" id="modalEditarCategoria{{ categoria.Id_Categoria }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Categoría</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditar{{ categoria.Id_Categoria }}" method="post" action="{% url 'editar_categoria' categoria.Id_Categoria %}">
+          {% csrf_token %}
+          <!-- Aquí se mostrarán los errores -->
+          <div id="erroresEditar{{ categoria.Id_Categoria }}"></div>
+
+          <div class="mb-3">
+            <label>Nombre de la Categoría</label>
+            <input type="text" name="Nombre_Categoria" value="{{ categoria.Nombre_Categoria }}" class="form-control">
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Modales Eliminar -->
+{% for categoria in categorias %}
+<div class="modal fade" id="modalEliminarCategoria{{ categoria.Id_Categoria }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Categoría</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar la categoría <strong>{{ categoria.Nombre_Categoria }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_categoria' categoria.Id_Categoria %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- Scripts -->
+
+<!-- Reset del formulario al cerrar el modal -->
+<script>
+  document.getElementById('modalAgregarCategoria').addEventListener('hidden.bs.modal', function () {
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('erroresCategoria').innerHTML = ""; // limpia mensajes de error
+    }
+  });
+</script>
+
+<!-- Envío AJAX para Agregar -->
+<script>
+  document.getElementById('formCategoria').addEventListener('submit', function(e) {
+    e.preventDefault(); // evita el submit normal
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarCategoria'));
+        modal.hide();
+        // Mostrar toast bonito
+        document.querySelector('#toastExito .toast-body').innerHTML =
+          '<i class="fa fa-check-circle me-2"></i> Categoría agregada correctamente';
+        var toastEl = document.getElementById('toastExito');
+        var toast = new bootstrap.Toast(toastEl);
+        toast.show();
+
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        const erroresDiv = document.getElementById('erroresCategoria');
+        erroresDiv.innerHTML = "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+</script>
+
+<!-- Envío AJAX para Editar -->
+<script>
+  document.querySelectorAll('[id^="formEditar"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Categoría actualizada correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          const erroresDiv = this.querySelector('[id^="erroresEditar"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+        }
+      });
+    });
+  });
+</script>
+
+<!-- Buscar -->
+<script>
+  document.getElementById('buscador').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("table tbody tr");
+
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+{% endblock %}

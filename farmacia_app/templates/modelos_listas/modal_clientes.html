@@ -1,0 +1,69 @@
+<!-- Modal Seleccionar Cliente -->
+<div class="modal fade" id="modalClientes" tabindex="-1" aria-labelledby="modalClientesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="modalClientesLabel">Seleccionar Cliente</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador -->
+        <input type="text" id="buscadorClientes" class="form-control mb-3" placeholder="Buscar cliente...">
+
+        <!-- Tabla de clientes -->
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Cliente</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cliente in clientes %}
+            <tr>
+              <td>{{ cliente.Nombre_Cliente }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarCliente px-3 py-1"
+                  data-id="{{ cliente.Id_Cliente }}"
+                  data-nombre="{{ cliente.Nombre_Cliente }}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Buscador en modal clientes
+document.getElementById('buscadorClientes').addEventListener('keyup', function() {
+  const filtro = this.value.toLowerCase();
+  document.querySelectorAll("#modalClientes table tbody tr").forEach(fila => {
+    fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+  });
+});
+
+// Seleccionar cliente
+document.addEventListener("DOMContentLoaded", function() {
+  const tablaClientes = document.querySelector("#modalClientes table tbody");
+  tablaClientes.addEventListener("click", function(e) {
+    if (e.target.classList.contains("seleccionarCliente") || e.target.closest(".seleccionarCliente")) {
+      const btn = e.target.closest(".seleccionarCliente");
+      const id = btn.dataset.id;
+      const nombre = btn.dataset.nombre;
+
+      // llenar campos principales en formulario
+      document.getElementById("clienteId").value = id;
+      document.getElementById("clienteNombre").value = nombre;
+
+      // cerrar modal clientes
+      bootstrap.Modal.getInstance(document.getElementById("modalClientes")).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    }
+  });
+});
+</script>

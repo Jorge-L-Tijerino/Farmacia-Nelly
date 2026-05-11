@@ -1,0 +1,253 @@
+{% extends 'paginas/index.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    
+  <!-- Barra de búsqueda y botón agregar -->
+  <div class="d-flex justify-content-between mb-3">
+    <input type="text" id="buscadorClientes" class="form-control w-50" placeholder="Buscar cliente...">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarCliente">
+      <i class="fa fa-plus me-2"></i> Agregar
+    </button>
+  </div>
+
+  <!-- Tabla de Clientes -->
+  <div class="d-flex justify-content-center">
+    <table class="table table-striped text-center">
+      <thead>
+        <tr>
+          <!-- ID oculto -->
+          <th>Nombre</th>
+          <th>Teléfono</th>
+          <th>Dirección</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cliente in clientes %}
+        <tr>
+          <td>{{ cliente.Nombre_Cliente }}</td>
+          <td>{{ cliente.Telefono_Cliente }}</td>
+          <td>{{ cliente.Direccion_Cliente }}</td>
+          <td>
+            <div class="btn-group" role="group">
+             <!-- Botón Editar -->
+<button class="btn btn-warning btn-sm" 
+        data-bs-toggle="modal" 
+        data-bs-target="#modalEditarCliente{{ cliente.Id_Cliente }}">
+  <i class="fa fa-edit"></i>
+</button>
+
+<!-- Botón Eliminar -->
+<button class="btn btn-danger btn-sm" 
+        data-bs-toggle="modal" 
+        data-bs-target="#modalEliminarCliente{{ cliente.Id_Cliente }}">
+  <i class="fa fa-trash"></i>
+</button>
+
+            </div> 
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Agregar Cliente -->
+<div class="modal fade" id="modalAgregarCliente" tabindex="-1" aria-labelledby="modalClienteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalClienteLabel">Agregar Cliente</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formCliente" method="post" action="{% url 'agregar_cliente' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="erroresCliente"></div>
+
+          <div class="mb-3">
+            <label for="id_Nombre_Cliente" class="form-label">Nombre</label>
+            {{ form.Nombre_Cliente }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Telefono_Cliente" class="form-label">Teléfono</label>
+            {{ form.Telefono_Cliente }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Direccion_Cliente" class="form-label">Dirección</label>
+            {{ form.Direccion_Cliente }}
+          </div>
+          
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modales Editar Cliente -->
+{% for cliente in clientes %}
+<div class="modal fade" id="modalEditarCliente{{ cliente.Id_Cliente }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Cliente</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarCliente{{ cliente.Id_Cliente }}" method="post" action="{% url 'editar_cliente' cliente.Id_Cliente %}">
+          {% csrf_token %}
+          <!-- Aquí se mostrarán los errores -->
+          <div id="erroresEditarCliente{{ cliente.Id_Cliente }}"></div>
+
+          <div class="mb-3">
+            <label>Nombre</label>
+            <input type="text" name="Nombre_Cliente" value="{{ cliente.Nombre_Cliente }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Teléfono</label>
+            <input type="text" name="Telefono_Cliente" value="{{ cliente.Telefono_Cliente }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Dirección</label>
+            <textarea name="Direccion_Cliente" class="form-control" rows="3">{{ cliente.Direccion_Cliente }}</textarea>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- Modales Eliminar Cliente -->
+{% for cliente in clientes %}
+<div class="modal fade" id="modalEliminarCliente{{ cliente.Id_Cliente }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Cliente</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar al cliente <strong>{{ cliente.Nombre_Cliente }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_cliente' cliente.Id_Cliente %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+
+<!-- script -->
+
+<!-- Reset del formulario al cerrar el modal de Agregar -->
+<script>
+  document.getElementById('modalAgregarCliente').addEventListener('hidden.bs.modal', function () {
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('erroresCliente').innerHTML = ""; // limpia mensajes de error
+    }
+  });
+</script>
+
+<!-- Envío AJAX para Agregar Cliente -->
+<script>
+  document.getElementById('formCliente').addEventListener('submit', function(e) {
+    e.preventDefault(); // evita el submit normal
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarCliente'));
+        modal.hide();
+        // Mostrar toast bonito
+        document.querySelector('#toastExito .toast-body').innerHTML = 
+          '<i class="fa fa-check-circle me-2"></i> Cliente agregado correctamente';
+        var toastEl = document.getElementById('toastExito');
+        var toast = new bootstrap.Toast(toastEl);
+        toast.show();
+
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        const erroresDiv = document.getElementById('erroresCliente');
+        erroresDiv.innerHTML = "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+</script>
+
+<!-- Envío AJAX para Editar Cliente -->
+<script>
+  document.querySelectorAll('[id^="formEditarCliente"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Cliente actualizado correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          const erroresDiv = this.querySelector('[id^="erroresEditarCliente"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+        }
+      });
+    });
+  });
+</script>
+
+  <!-- Script: Buscar Clientes -->
+  <script>
+    document.getElementById('buscadorClientes').addEventListener('keyup', function() {
+      const filtro = this.value.toLowerCase();
+      const filas = document.querySelectorAll("table tbody tr");
+
+      filas.forEach(fila => {
+        const textoFila = fila.textContent.toLowerCase();
+        fila.style.display = textoFila.includes(filtro) ? "" : "none";
+      });
+    });
+  </script>
+
+</div>
+{% endblock %}
+
+

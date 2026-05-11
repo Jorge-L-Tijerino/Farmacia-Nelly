@@ -1,0 +1,655 @@
+{% extends 'paginas/index.html' %}
+
+{% block content %}
+
+<!-- Mensajes de advertencia/éxito -->
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="post" action="{% url 'registrar_compra' %}">
+    {% csrf_token %}
+
+    <!-- Producto -->
+    <label>Producto:</label>
+    <input type="text" id="productoNombre" disabled>
+    <input type="hidden" id="productoId" name="productoId">
+    <button type="button" class="btn btn-outline-secondary abrirModalProductos">
+        <i class="fa fa-search"></i>
+    </button>
+
+    <!-- Fecha -->
+    <label>Fecha de compra:</label>
+    <input type="date" id="fechaCompra" name="fechaCompra">
+
+    <!-- Proveedor -->
+    <label>Proveedor:</label>
+    <input type="text" id="proveedorNombre" disabled>
+    <input type="hidden" id="proveedorId" name="proveedorId">
+    <button type="button" class="btn btn-outline-secondary abrirModalProveedores">
+        <i class="fa fa-search"></i>
+    </button>
+
+    <!-- Tabla local -->
+<!-- Tabla local -->
+    <div class="d-flex justify-content-center">
+      <table class="table table-striped text-center align-middle mt-4">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Unidad</th>
+            <th>Precio</th>
+            <th>Caducidad</th>
+            <th>Total</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaLocalBody">
+          {% for item in tabla_local %}
+          <tr>
+            <td>{{ item.producto_nombre }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>{{ item.unidad_nombre }}</td>
+            <td>{{ item.precio }}</td>
+            <td>{{ item.fecha }}</td>
+            <td>{{ item.costo_total }}</td>
+            <td>
+              <div class="btn-group" role="group">
+                <!-- Botón Editar -->
+                <button type="button" class="btn btn-warning btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#modalEditarDetalle{{ forloop.counter0 }}">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <!-- Botón Eliminar -->
+                <button type="button" class="btn btn-danger btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#modalEliminarDetalle{{ forloop.counter0 }}">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+
+   <!-- Bloque inferior -->
+<div class="row mt-4">
+  <div class="col-md-6">
+    <button type="submit" class="btn btn-success">
+      <i class="fa fa-check"></i> Registrar Compra
+    </button>
+    <button type="button" class="btn btn-danger ms-2" onclick="cancelarTablaLocal()">
+      <i class="fa fa-times"></i> Cancelar
+    </button>
+  </div>
+  <div class="col-md-6 text-end">
+    <label>Total a pagar:</label>
+    <input type="text" id="totalPagar" name="totalPagar" readonly 
+           class="form-control d-inline-block" style="width: 150px;">
+  </div>
+</div>
+
+
+
+<!-- Modal detalle producto -->
+<div class="modal fade" id="modal_detalle_producto" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Detalle del producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formDetalleProducto">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Producto</label>
+              <input type="text" id="detalleProductoNombre" class="form-control" disabled>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Stock actual</label>
+              <input type="text" id="detalleStockActual" class="form-control" disabled>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Cantidad</label>
+              <input type="number" id="detalleCantidad" class="form-control" min="1">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Unidad</label>
+              <div class="input-group">
+                <input type="text" id="detalleUnidadNombre" class="form-control" disabled>
+                <input type="hidden" id="detalleUnidadId">
+                <button type="button" class="btn btn-outline-secondary abrirModalUnidades">
+                  <i class="fa fa-search"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Precio compra</label>
+              <input type="text" id="detallePrecioCompra" class="form-control" disabled>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Fecha caducidad</label>
+              <input type="date" id="detalleFechaCaducidad" class="form-control">
+            </div>
+          </div>
+
+          <div class="text-end">
+            <button type="button" id="btnAgregarDetalle" class="btn btn-success">
+              <i class="fa fa-plus"></i> Agregar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Includes de modales -->
+{% include 'modelos_listas/modal_productoscompra.html' %}
+{% include 'modelos_listas/modal_proveedores.html' %}
+{% include 'modelos_listas/modal_unidades.html' %}
+
+<!-- Modal detalle producto Editar -->
+{% for item in tabla_local %}
+<div class="modal fade" id="modalEditarDetalle{{ forloop.counter0 }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Detalle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarDetalle{{ forloop.counter0 }}" 
+              action="{% url 'editar_compra' forloop.counter0 %}" method="post">
+          {% csrf_token %}
+          <div id="erroresEditarDetalle{{ forloop.counter0 }}"></div>
+
+          <!-- Producto -->
+          <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <input type="text" class="form-control" value="{{ item.producto_nombre }}" disabled>
+          </div>
+
+          <!-- Cantidad -->
+          <div class="mb-3">
+            <label class="form-label">Cantidad</label>
+            <input type="number" name="cantidad" value="{{ item.cantidad }}" class="form-control" min="1">
+          </div>
+
+          <!-- Unidad con lupa -->
+          <div class="mb-3">
+            <label class="form-label">Unidad</label>
+            <div class="input-group">
+              <input type="text" id="unidadNombreEditar{{ forloop.counter0 }}" 
+                     value="{{ item.unidad_nombre }}" class="form-control" disabled>
+              <input type="hidden" id="unidadIdEditar{{ forloop.counter0 }}" name="unidad_id" value="{{ item.unidad_id }}">
+              <input type="hidden" id="unidadNombreHidden{{ forloop.counter0 }}" name="unidad_nombre" value="{{ item.unidad_nombre }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalUnidadesEditar" 
+                      data-index="{{ forloop.counter0 }}" data-producto="{{ item.producto_id }}">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Precio -->
+          <div class="mb-3">
+            <label class="form-label">Precio compra</label>
+            <input type="text" id="precioEditar{{ forloop.counter0 }}" 
+                   value="{{ item.precio|floatformat:2 }}" class="form-control" disabled>
+            <input type="hidden" id="precioHidden{{ forloop.counter0 }}" name="precio" value="{{ item.precio|floatformat:2 }}">
+          </div>
+
+          <!-- Fecha caducidad -->
+          <div class="mb-3">
+            <label class="form-label">Fecha caducidad</label>
+            <input type="date" name="fecha_caducidad" value="{{ item.fecha }}" class="form-control">
+          </div>
+
+           <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- Modal Eliminar Detalle -->
+{% for item in tabla_local %}
+<div class="modal fade" id="modalEliminarDetalle{{ forloop.counter0 }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Detalle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar el detalle del producto 
+           <strong>{{ item.producto_nombre }}</strong>, 
+           unidad <strong>{{ item.unidad_nombre }}</strong>, 
+           cantidad <strong>{{ item.cantidad }}</strong> 
+           y fecha <strong>{{ item.fecha }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_compra' forloop.counter0 %}" class="formEliminarDetalle">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+
+<!-- Scripts -->
+ <!-- Agregar -->
+<script>
+  // Abrir modales
+  document.querySelector('.abrirModalProductos').addEventListener('click', function() {
+    new bootstrap.Modal(document.getElementById('modalProductosCompra')).show();
+  });
+  document.querySelector('.abrirModalProveedores').addEventListener('click', function() {
+    new bootstrap.Modal(document.getElementById('modalProveedores')).show();
+  });
+  document.querySelector('.abrirModalUnidades').addEventListener('click', function() {
+    const productoId = document.getElementById("productoId").value;
+    if (!productoId) {
+      alert("Primero seleccione un producto.");
+      return;
+    }
+    cargarUnidades(productoId);
+    new bootstrap.Modal(document.getElementById('modalUnidades')).show();
+  });
+
+  // Seleccionar producto
+  document.addEventListener("DOMContentLoaded", function() {
+    const tablaProductos = document.querySelector("#modalProductosCompra table tbody");
+    tablaProductos.addEventListener("click", function(e) {
+      if (e.target.classList.contains("seleccionarProductoCompra") || e.target.closest(".seleccionarProductoCompra")) {
+        const btn = e.target.closest(".seleccionarProductoCompra");
+        const id = btn.dataset.id;
+        const nombre = btn.dataset.nombre;
+        const stock = btn.dataset.stock;
+        const precio = btn.dataset.precio;
+
+        document.getElementById("productoId").value = id;
+        document.getElementById("productoNombre").value = nombre;
+        document.getElementById("detalleProductoNombre").value = nombre;
+        document.getElementById("detalleStockActual").value = stock;
+        document.getElementById("detallePrecioCompra").value = precio;
+
+        bootstrap.Modal.getInstance(document.getElementById("modalProductosCompra")).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+        new bootstrap.Modal(document.getElementById("modal_detalle_producto")).show();
+      }
+    });
+
+    // 🔹 Recalcular total al cargar la página
+    let suma = 0;
+    document.querySelectorAll("#tablaLocalBody tr").forEach(tr => {
+      const costo = tr.querySelector("td:nth-child(6)")?.innerText;
+      if (costo) {
+        suma += parseFloat(costo);
+      }
+    });
+    document.getElementById("totalPagar").value = suma.toFixed(2);
+  });
+
+  // Cargar unidades dinámicamente
+  function cargarUnidades(productoId) {
+    fetch(`/compras/unidades/${productoId}/`)
+      .then(response => response.json())
+      .then(result => {
+        const tbody = document.querySelector("#modalUnidades table tbody");
+        tbody.innerHTML = "";
+        result.unidades.forEach(u => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${u.nombre}</td>
+              <td>${u.equivalencia}</td>
+              <td>${u.precio}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarUnidad"
+                  data-id="${u.id}"
+                  data-nombre="${u.nombre}"
+                  data-precio="${u.precio}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+  }
+
+  // Seleccionar unidad
+  document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("seleccionarUnidad") || e.target.closest(".seleccionarUnidad")) {
+      const btn = e.target.closest(".seleccionarUnidad");
+      const id = btn.dataset.id;
+      const nombre = btn.dataset.nombre;
+      const precio = btn.dataset.precio;
+
+      document.getElementById("detalleUnidadId").value = id;
+      document.getElementById("detalleUnidadNombre").value = nombre;
+      document.getElementById("detallePrecioCompra").value = precio;
+
+      bootstrap.Modal.getInstance(document.getElementById("modalUnidades")).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    }
+  });
+
+  // Agregar detalle vía AJAX
+  document.getElementById("btnAgregarDetalle").addEventListener("click", function() {
+    const data = {
+      producto_id: document.getElementById("productoId").value,
+      unidad_id: document.getElementById("detalleUnidadId").value,
+      cantidad: document.getElementById("detalleCantidad").value,
+      fecha_caducidad: document.getElementById("detalleFechaCaducidad").value,
+      csrfmiddlewaretoken: document.querySelector("[name=csrfmiddlewaretoken]").value
+    };
+
+    fetch("{% url 'agregar_compra' %}", {
+      method: "POST",
+      body: new URLSearchParams(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        const tbody = document.getElementById("tablaLocalBody");
+        tbody.innerHTML = "";
+        result.tabla_local.forEach((item, i) => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${item.producto_nombre}</td>
+              <td>${item.cantidad}</td>
+              <td>${item.unidad_nombre}</td>
+              <td>${item.precio}</td>
+              <td>${item.fecha}</td>
+              <td>${item.costo_total}</td>
+              <td>
+                <div class="btn-group" role="group">
+                  <button class="btn btn-warning btn-sm" onclick="editarDetalle(${i})">
+                    <i class="fa fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="eliminarDetalle(${i})">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+
+        // recalcular total
+        let suma = 0;
+        result.tabla_local.forEach(item => suma += parseFloat(item.costo_total));
+        document.getElementById("totalPagar").value = suma.toFixed(2);
+
+        // cerrar modal detalle producto
+        bootstrap.Modal.getInstance(document.getElementById("modal_detalle_producto")).hide();
+
+        // limpiar campos para siguiente producto
+        document.getElementById("productoId").value = "";
+        document.getElementById("productoNombre").value = "";
+        document.getElementById("detalleProductoNombre").value = "";
+        document.getElementById("detalleStockActual").value = "";
+        document.getElementById("detalleUnidadId").value = "";
+        document.getElementById("detalleUnidadNombre").value = "";
+        document.getElementById("detallePrecioCompra").value = "";
+        document.getElementById("detalleCantidad").value = "";
+        document.getElementById("detalleFechaCaducidad").value = "";
+      }
+    });
+  });
+</script>
+
+<!-- Boton Cancelar -->
+<script>
+function cancelarTablaLocal() {
+  fetch("{% url 'cancelar_compra' %}", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+    }
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.success) {
+      // limpiar tabla en frontend
+      document.getElementById("tablaLocalBody").innerHTML = "";
+      document.getElementById("totalPagar").value = "0.00";
+    }
+  });
+}
+</script>
+
+<!-- Editar -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // Abrir modal de unidades en edición (filtradas por producto)
+  document.querySelectorAll('.abrirModalUnidadesEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = this.dataset.index;
+      const productoId = this.dataset.producto;
+
+      const modalEditar = document.getElementById('modalEditarDetalle' + index);
+      modalEditar.setAttribute('data-opened', 'true');
+
+      // cargar solo unidades de ese producto
+      fetch(`/compras/unidades/${productoId}/`)
+        .then(response => response.json())
+        .then(result => {
+          const tbody = document.querySelector("#modalUnidadesEditar table tbody");
+          tbody.innerHTML = "";
+          result.unidades.forEach(u => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${u.nombre}</td>
+                <td>${u.equivalencia}</td>
+                <td>${u.precio}</td>
+                <td>
+                  <button type="button" class="btn btn-success seleccionarUnidadEditar px-3 py-1"
+                    data-id="${u.id}"
+                    data-nombre="${u.nombre}"
+                    data-precio="${u.precio}">
+                    Seleccionar <i class="fa fa-check ms-2"></i>
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+
+          // 🔑 abrir modal de unidades encima del de edición
+          const modalUnidades = document.getElementById('modalUnidadesEditar');
+          modalUnidades.style.zIndex = 1060; // asegurar que quede arriba
+          const backdrop = document.querySelector('.modal-backdrop');
+          if (backdrop) backdrop.style.zIndex = 1055;
+
+          new bootstrap.Modal(modalUnidades).show();
+        });
+    });
+  });
+
+  // Seleccionar unidad en modal editar
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest(".seleccionarUnidadEditar");
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const nombre = btn.dataset.nombre;
+    const precio = btn.dataset.precio;
+
+    document.querySelectorAll('[id^="modalEditarDetalle"]').forEach(modal => {
+      if (modal.getAttribute('data-opened') === 'true') {
+        const index = modal.id.replace('modalEditarDetalle', '');
+        document.getElementById('unidadIdEditar' + index).value = id;
+        document.getElementById('unidadNombreEditar' + index).value = nombre;
+        document.getElementById('unidadNombreHidden' + index).value = nombre;
+        document.getElementById('precioEditar' + index).value = precio;
+        document.getElementById('precioHidden' + index).value = precio;
+
+        bootstrap.Modal.getInstance(document.getElementById('modalUnidadesEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+        modal.removeAttribute('data-opened');
+      }
+    });
+  });
+
+  // Guardar cambios vía AJAX con toast
+  document.querySelectorAll('[id^="formEditarDetalle"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: "POST",
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Detalle actualizado correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+
+          // refrescar tabla
+          const tbody = document.getElementById("tablaLocalBody");
+          tbody.innerHTML = "";
+          result.tabla_local.forEach((item, i) => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${item.producto_nombre}</td>
+                <td>${item.cantidad}</td>
+                <td>${item.unidad_nombre}</td>
+                <td>${item.precio}</td>
+                <td>${item.fecha}</td>
+                <td>${item.costo_total}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="editarDetalle(${i})">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarDetalle(${i})">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          });
+
+          let suma = 0;
+          result.tabla_local.forEach(item => suma += parseFloat(item.costo_total));
+          document.getElementById("totalPagar").value = suma.toFixed(2);
+
+        } else {
+          const erroresDiv = this.querySelector('[id^="erroresEditarDetalle"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>Error al actualizar detalle</div>";
+        }
+      });
+    });
+  });
+});
+
+// Función para abrir modal de edición
+function editarDetalle(index) {
+  const modal = document.getElementById("modalEditarDetalle" + index);
+  if (modal) {
+    new bootstrap.Modal(modal).show();
+  }
+}
+</script>
+
+
+<!-- Eliminar -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll(".formEliminarDetalle").forEach(form => {
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const url = this.action;
+      const data = new FormData(this);
+
+      fetch(url, {
+        method: "POST",
+        body: data,
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest(".modal"));
+          modal.hide();
+
+          const tbody = document.getElementById("tablaLocalBody");
+          tbody.innerHTML = "";
+          result.tabla_local.forEach((item, i) => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${item.producto_nombre}</td>
+                <td>${item.cantidad}</td>
+                <td>${item.unidad_nombre}</td>
+                <td>${item.precio}</td>
+                <td>${item.fecha}</td>
+                <td>${item.costo_total}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditarDetalle${i}">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalEliminarDetalle${i}">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          });
+
+          let suma = 0;
+          result.tabla_local.forEach(item => suma += parseFloat(item.costo_total));
+          document.getElementById("totalPagar").value = suma.toFixed(2);
+        } else {
+          alert("❌ Error al eliminar detalle");
+        }
+      });
+    });
+  });
+});
+</script>
+
+
+
+
+
+
+
+{% endblock %}

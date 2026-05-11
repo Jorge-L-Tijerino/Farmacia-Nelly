@@ -1,0 +1,518 @@
+{% extends 'paginas/index.html' %}
+
+{% block content %}
+<div class="container mt-4">
+
+     <!-- Barra de búsqueda y botón agregar -->
+    <div class="d-flex justify-content-between mb-3">
+        <input type="text" class="form-control w-50" placeholder="Buscar...">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCuenta">
+      <i class="fa fa-plus me-2"></i> Agregar
+    </button>
+  </div>
+
+    <!-- Tabla de Cuentas -->
+    <table class="table table-striped text-center">
+        <thead>
+            <tr>
+                <!-- ID oculto -->
+                <th>Empleado</th> 
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Correo</th>
+                <th>Contraseña</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se cargarán los registros dinámicamente -->
+             {% for cuenta in cuentas %}
+      <tr>
+        <td>{{ cuenta.Id_Empleado.Nombre_Empleado }}</td>
+        <td>{{ cuenta.Rol }}</td>
+        <td>{{ cuenta.Estado }}</td>
+        <td>{{ cuenta.Correo_Empleados }}</td>
+        <td>{{ cuenta.Pass }}</td>
+        <td>
+           <div class="btn-group" role="group">
+    <!-- Botón Editar -->
+<button class="btn btn-warning btn-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#modalEditarCuenta{{ cuenta.Id_Usuario }}">
+  <i class="fa fa-edit"></i>
+</button>
+
+<!-- Botón Eliminar -->
+<button class="btn btn-danger btn-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#modalEliminarCuenta{{ cuenta.Id_Usuario }}">
+  <i class="fa fa-trash"></i>
+</button>
+  </div>
+
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+       <!-- Modal Agregar Cuenta -->
+<div class="modal fade" id="modalCuenta" tabindex="-1" aria-labelledby="modalCuentaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalCuentaLabel">Agregar Cuenta</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formCuenta" method="post" action="{% url 'agregar_cuenta' %}">
+          {% csrf_token %}
+
+          <!-- Aquí se mostrarán los errores vía AJAX -->
+          <div id="erroresCuenta"></div>
+
+          <!-- Campo Empleado -->
+          <div class="mb-3">
+            <label class="form-label">Empleado</label>
+            <div class="input-group">
+    <input type="text" id="empleadoNombre" class="form-control" disabled>
+    <input type="hidden" id="empleadoId" name="Id_Empleado">
+    <!-- Aquí va el botón lupa -->
+    <button type="button" class="btn btn-outline-secondary abrirModalEmpleadosAgregar">
+      <i class="fa fa-search"></i>
+    </button>
+  </div>
+</div>
+
+
+          <div class="mb-3">
+            <label for="id_Rol" class="form-label">Rol</label>
+            {{ form.Rol }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Estado" class="form-label">Estado</label>
+            {{ form.Estado }}
+          </div>
+          <div class="mb-3">
+            <label for="id_Correo_Empleados" class="form-label">Correo</label>
+            {{ form.Correo_Empleados }}
+          </div>
+          <div class="mb-3 position-relative">
+            <label for="id_Pass" class="form-label">Contraseña</label>
+            <div class="input-group">
+              {{ form.Pass }}
+              <button type="button" class="btn btn-outline-secondary" id="togglePass">
+                <i class="fa fa-eye-slash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="fa fa-save me-2"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div> <!-- 🔴 aquí termina el modal de cuentas -->
+
+<!-- Modal de Empleados Agregar -->
+<div class="modal fade" id="modalEmpleados" tabindex="-1" aria-labelledby="modalEmpleadosLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalEmpleadosLabel">Seleccionar Empleado</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscadorEmpleados" class="form-control mb-3" placeholder="Buscar empleado..."> <!-- Buscar -->
+        <table class="table table-striped text-center align-middle"> <!-- Tabla -->
+          <thead>
+            <tr>
+              <th>Nombre Completo</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for empleado in empleados %}
+            <tr>
+              <td>{{ empleado.Nombre_Empleado }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarEmpleado px-3 py-1"
+                        data-id="{{ empleado.Id_Empleado }}"
+                        data-nombre="{{ empleado.Nombre_Empleado }}">
+                  Seleccionar <i class="fa fa-user-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Editar Cuenta -->
+{% for cuenta in cuentas %}
+<div class="modal fade" id="modalEditarCuenta{{ cuenta.Id_Usuario }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Cuenta</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarCuenta{{ cuenta.Id_Usuario }}" method="post" action="{% url 'editar_cuenta' cuenta.Id_Usuario %}">
+          {% csrf_token %}
+          <div id="erroresEditarCuenta{{ cuenta.Id_Usuario }}"></div>
+
+          <div class="mb-3">
+            <label class="form-label">Empleado</label>
+            <div class="input-group">
+              <input type="text" id="empleadoNombreEditar{{ cuenta.Id_Usuario }}" 
+                     class="form-control" value="{{ cuenta.Id_Empleado.Nombre_Empleado }}" disabled>
+              <input type="hidden" id="empleadoIdEditar{{ cuenta.Id_Usuario }}" 
+                     name="Id_Empleado" value="{{ cuenta.Id_Empleado.Id_Empleado }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalEmpleadosEditar">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>          
+
+          <div class="mb-3">
+            <label>Rol</label>
+            <select name="Rol" class="form-control">
+              <option value="Administrador" {% if cuenta.Rol == 'Administrador' %}selected{% endif %}>Administrador</option>
+              <option value="Cajero" {% if cuenta.Rol == 'Cajero' %}selected{% endif %}>Cajero</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label>Estado</label>
+            <select name="Estado" class="form-control">
+              <option value="Activo" {% if cuenta.Estado == 'Activo' %}selected{% endif %}>Activo</option>
+              <option value="Inactivo" {% if cuenta.Estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label>Correo</label>
+            <input type="email" name="Correo_Empleados" value="{{ cuenta.Correo_Empleados }}" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label>Contraseña</label>
+            <input type="text" name="Pass" value="{{ cuenta.Pass }}" class="form-control">
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Modal de Empleados Editar -->
+<div class="modal fade" id="modalEmpleadosEditar" tabindex="-1" aria-labelledby="modalEmpleadosEditarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="modalEmpleadosEditarLabel">Seleccionar Empleado</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscadorEmpleadosEditar" class="form-control mb-3" placeholder="Buscar empleado...">
+        <table class="table table-striped text-center align-middle">
+          <thead>
+            <tr>
+              <th>Nombre Completo</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for empleado in empleados %}
+            <tr>
+              <td>{{ empleado.Nombre_Empleado }}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarEmpleadoEditar px-3 py-1"
+                        data-id="{{ empleado.Id_Empleado }}"
+                        data-nombre="{{ empleado.Nombre_Empleado }}">
+                  Seleccionar <i class="fa fa-user-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Modal Eliminar Cuenta -->
+{% for cuenta in cuentas %}
+<div class="modal fade" id="modalEliminarCuenta{{ cuenta.Id_Usuario }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Cuenta</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar la cuenta de <strong>{{ cuenta.Id_Empleado.Nombre_Empleado }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_cuenta' cuenta.Id_Usuario %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Scripts -->
+
+<!-- Script: Reset del formulario al cerrar el modal de cuentas -->
+<script>
+  document.getElementById('modalCuenta').addEventListener('hidden.bs.modal', function () {
+    if (this.getAttribute('data-opened') === 'true') {
+      this.removeAttribute('data-opened');
+      return;
+    }
+    const form = this.querySelector('form');
+    if (form) {
+      form.reset();
+      document.getElementById('erroresCuenta').innerHTML = "";
+      document.getElementById('empleadoNombre').value = "";
+      document.getElementById('empleadoId').value = "";
+    }
+  });
+</script>
+
+<!-- Script: Envío AJAX Agregar-->
+<script>
+  document.getElementById('formCuenta').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalCuenta'));
+        modal.hide();
+        document.querySelector('#toastExito .toast-body').innerHTML =
+          '<i class="fa fa-check-circle me-2"></i> Cuenta agregada correctamente';
+        var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+        toast.show();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        document.getElementById('erroresCuenta').innerHTML =
+          "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+      }
+    });
+  });
+</script>
+
+<!-- Script: Toggle contraseña -->
+<script>
+  const togglePassBtn = document.getElementById('togglePass');
+  const passInput = document.getElementById('id_Pass');
+  const icon = togglePassBtn.querySelector('i');
+
+  togglePassBtn.addEventListener('click', function () {
+    if (passInput.type === "password") {
+      passInput.type = "text";
+      icon.classList.replace("fa-eye-slash", "fa-eye");
+    } else {
+      passInput.type = "password";
+      icon.classList.replace("fa-eye", "fa-eye-slash");
+    }
+  });
+</script>
+
+<!-- Script: Seleccionar empleado en Agregar -->
+<script>
+  // Abrir modal de empleados desde Agregar
+  document.querySelector('.abrirModalEmpleadosAgregar').addEventListener('click', function() {
+    document.getElementById('modalCuenta').setAttribute('data-opened', 'true');
+    var modalEmpleados = new bootstrap.Modal(document.getElementById('modalEmpleados'));
+    modalEmpleados.show();
+  });
+
+  // Seleccionar empleado en Agregar
+  document.querySelectorAll('.seleccionarEmpleado').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      const nombre = this.getAttribute('data-nombre');
+      document.getElementById('empleadoId').value = id;
+      document.getElementById('empleadoNombre').value = nombre;
+
+      var modalEmpleados = bootstrap.Modal.getInstance(document.getElementById('modalEmpleados'));
+      modalEmpleados.hide();
+
+      // 🔴 Eliminar backdrop extra antes de reabrir cuentas
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+      var modalCuenta = new bootstrap.Modal(document.getElementById('modalCuenta'));
+      modalCuenta.show();
+    });
+  });
+
+  // Reabrir modal de cuentas si se cierra el de empleados con la X
+  document.getElementById('modalEmpleados').addEventListener('hidden.bs.modal', function () {
+    const modalCuenta = document.getElementById('modalCuenta');
+    if (modalCuenta.getAttribute('data-opened') === 'true') {
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+      var modalCuentaInstance = new bootstrap.Modal(modalCuenta);
+      modalCuentaInstance.show();
+      modalCuenta.removeAttribute('data-opened');
+    }
+  });
+</script>
+
+<!-- Script: Seleccionar empleado en Editar -->
+<script>
+  // Abrir modal de empleados desde Editar
+  document.querySelectorAll('.abrirModalEmpleadosEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Guardamos referencia del modal de edición que estaba abierto
+      document.querySelectorAll('[id^="modalEditarCuenta"]').forEach(modal => {
+        if (modal.classList.contains('show')) {
+          modal.setAttribute('data-opened', 'true');
+        }
+      });
+      var modalEmpleadosEditar = new bootstrap.Modal(document.getElementById('modalEmpleadosEditar'));
+      modalEmpleadosEditar.show();
+    });
+  });
+
+  // Seleccionar empleado en Editar
+  document.querySelectorAll('.seleccionarEmpleadoEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      const nombre = this.getAttribute('data-nombre');
+
+      document.querySelectorAll('[id^="modalEditarCuenta"]').forEach(modal => {
+        if (modal.getAttribute('data-opened') === 'true') {
+          const cuentaId = modal.id.replace('modalEditarCuenta', '');
+          document.getElementById('empleadoIdEditar' + cuentaId).value = id;
+          document.getElementById('empleadoNombreEditar' + cuentaId).value = nombre;
+
+          var modalEmpleadosEditar = bootstrap.Modal.getInstance(document.getElementById('modalEmpleadosEditar'));
+          modalEmpleadosEditar.hide();
+
+          // 🔴 Eliminar backdrop extra
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+          // Reabrir modal de edición
+          var modalEditarCuenta = new bootstrap.Modal(modal);
+          modalEditarCuenta.show();
+          modal.removeAttribute('data-opened');
+        }
+      });
+    });
+  });
+
+  // Reabrir modal de edición si se cierra empleados con la X
+  document.getElementById('modalEmpleadosEditar').addEventListener('hidden.bs.modal', function () {
+    document.querySelectorAll('[id^="modalEditarCuenta"]').forEach(modal => {
+      if (modal.getAttribute('data-opened') === 'true') {
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        var modalEditarCuenta = new bootstrap.Modal(modal);
+        modalEditarCuenta.show();
+        modal.removeAttribute('data-opened');
+      }
+    });
+  });
+</script>
+
+<!-- Envío AJAX para Editar -->
+<script>
+ document.querySelectorAll('[id^="formEditarCuenta"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+          document.querySelector('#toastExito .toast-body').innerHTML =
+            '<i class="fa fa-check-circle me-2"></i> Cuenta actualizada correctamente';
+          var toast = new bootstrap.Toast(document.getElementById('toastExito'));
+          toast.show();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          const erroresDiv = this.querySelector('[id^="erroresEditarCuenta"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'>" + result.errors.join("<br>") + "</div>";
+        }
+      });
+    });
+  });
+</script>
+
+<!-- Buscar Modal Empleados Agregar -->
+<script>
+  document.getElementById('buscadorEmpleados').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#modalEmpleados table tbody tr");
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+<!-- Buscar Modal Empleados Editar -->
+<script>
+  document.getElementById('buscadorEmpleadosEditar').addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#modalEmpleadosEditar table tbody tr");
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+<!-- Script: Buscar General -->
+<script>
+  // Seleccionamos el input de búsqueda
+  const buscadorCuentas = document.querySelector('.container input[placeholder="Buscar..."]');
+
+  buscadorCuentas.addEventListener('keyup', function() {
+    const filtro = this.value.toLowerCase();
+    // Seleccionamos todas las filas del tbody de la tabla principal
+    const filas = document.querySelectorAll("table tbody tr");
+
+    filas.forEach(fila => {
+      const textoFila = fila.textContent.toLowerCase();
+      fila.style.display = textoFila.includes(filtro) ? "" : "none";
+    });
+  });
+</script>
+
+{% endblock %}
+

@@ -1,0 +1,845 @@
+{% extends 'paginas/index.html' %}
+
+{% block content %}
+
+<!-- Mensajes de advertencia/éxito -->
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="post" action="{% url 'registrar_venta' %}">
+    {% csrf_token %}
+
+    <!-- Cliente -->
+    <label>Cliente:</label>
+    <input type="text" id="clienteNombre" disabled>
+    <input type="hidden" id="clienteId" name="clienteId">
+    <button type="button" class="btn btn-outline-secondary abrirModalClientes">
+        <i class="fa fa-search"></i>
+    </button>
+
+    <!-- Fecha de venta (bloqueada, siempre hoy) -->
+    <label>Fecha de venta:</label>
+    <input type="date" id="fechaVenta" name="fechaVenta" value="{{ today|date:'Y-m-d' }}" readonly>
+
+    <!-- Producto -->
+    <label>Producto:</label>
+    <input type="text" id="productoNombre" disabled>
+    <input type="hidden" id="productoId" name="productoId">
+    <button type="button" class="btn btn-outline-secondary abrirModalProductos">
+        <i class="fa fa-search"></i>
+    </button>
+
+    <!-- Tabla local de ventas -->
+<div class="d-flex justify-content-center">
+  <table class="table table-striped text-center align-middle mt-4">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Presentación</th>
+        <th>Cantidad</th>
+        <th>Precio Venta</th>
+        <th>Total</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tablaLocalVentaBody">
+      {% for item in tabla_local %}
+      <tr>
+        <td>{{ item.producto_nombre }}</td>
+        <td>{{ item.unidad_nombre }}</td>
+        <td>{{ item.cantidad }}</td>
+        <td>{{ item.precio }}</td>
+        <td>{{ item.monto }}</td>
+        <td>
+          <div class="btn-group" role="group">
+            <!-- Botón Editar -->
+            <button type="button" class="btn btn-warning btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#modalEditarVenta{{ forloop.counter0 }}">
+              <i class="fa fa-edit"></i>
+            </button>
+            <!-- Botón Eliminar -->
+            <button type="button" class="btn btn-danger btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#modalEliminarVenta{{ forloop.counter0 }}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Bloque inferior -->
+<div class="row mt-4">
+  <div class="col-md-6">
+    <button type="submit" class="btn btn-success">
+      <i class="fa fa-check"></i> Registrar Venta
+    </button>
+    <button type="button" class="btn btn-danger ms-2" onclick="cancelarVenta()">
+      <i class="fa fa-times"></i> Cancelar
+    </button>
+  </div>
+  <div class="col-md-6 text-end">
+    <div class="mb-2">
+  <label>Total a pagar:</label>
+  <input type="text" id="totalPagarVenta" name="totalPagarVenta" readonly
+         class="form-control d-inline-block" style="width: 150px;"
+         value="{{ total_pagar|floatformat:2 }}">
+</div>
+<div class="mb-2">
+  <label>Paga con:</label>
+  <input type="number" id="pagaCon" name="pagaCon"
+         class="form-control d-inline-block" style="width: 150px;"
+         oninput="calcularCambio()">
+</div>
+<div>
+  <label>Cambio:</label>
+  <input type="text" id="cambio" name="cambio" readonly
+         class="form-control d-inline-block" style="width: 150px;" value="0.00">
+</div>
+
+<!-- Modal detalle producto (VENTA) -->
+<div class="modal fade" id="modal_detalle_producto" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Detalle del producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formDetalleProductoVenta">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Producto</label>
+              <input type="text" id="detalleProductoNombre" class="form-control" disabled>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Stock actual</label>
+              <input type="text" id="detalleStockActual" class="form-control" disabled>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <label class="form-label">Cantidad</label>
+              <input type="number" id="detalleCantidad" class="form-control" min="1">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Presentación</label>
+              <div class="input-group">
+                <input type="text" id="detalleUnidadNombre" class="form-control" disabled>
+                <input type="hidden" id="detalleUnidadId">
+                <button type="button" class="btn btn-outline-secondary abrirModalUnidadesVenta">
+                  <i class="fa fa-search"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Precio venta</label>
+              <input type="text" id="detallePrecioVenta" class="form-control" disabled>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Lote / Caducidad</label>
+              <div class="input-group">
+                <input type="text" id="detalleFechaCaducidad" class="form-control" disabled>
+                <input type="hidden" id="detalleLoteId">
+                <input type="hidden" id="detalleCantidadLoteDisponible">
+                <button type="button" class="btn btn-outline-secondary abrirModalCaducidad">
+                  <i class="fa fa-search"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🔹 Aquí va el mensaje de error -->
+          <div id="mensajeErrorVenta" class="alert alert-danger d-none mt-2"></div>
+
+          <div class="text-end">
+            <button type="button" id="btnAgregarDetalleVenta" class="btn btn-success">
+              <i class="fa fa-plus"></i> Agregar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Includes de modales -->
+{% include 'modelos_listas/modal_productoscompra.html' %}
+{% include 'modelos_listas/modal_clientes.html' %}
+{% include 'modelos_listas/modal_unidadesventa.html' %}
+{% include 'modelos_listas/modal_caducidad.html' %}
+
+<!-- Modal detalle producto (VENTA Editar) -->
+{% for item in tabla_local %}
+<div class="modal fade" id="modalEditarVenta{{ forloop.counter0 }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title">Editar Detalle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarVenta{{ forloop.counter0 }}" 
+              action="{% url 'editar_venta' forloop.counter0 %}" method="post">
+          {% csrf_token %}
+          <div id="erroresEditarVenta{{ forloop.counter0 }}"></div>
+
+          <!-- Producto -->
+          <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <input type="text" class="form-control" value="{{ item.producto_nombre }}" disabled>
+          </div>
+
+          <!-- Cantidad -->
+          <div class="mb-3">
+            <label class="form-label">Cantidad</label>
+            <input type="number" name="cantidad" value="{{ item.cantidad }}" class="form-control" min="1">
+          </div>
+
+          <!-- Unidad con lupa -->
+          <div class="mb-3">
+            <label class="form-label">Unidad</label>
+            <div class="input-group">
+              <input type="text" id="unidadNombreEditar{{ forloop.counter0 }}" 
+                     value="{{ item.unidad_nombre }}" class="form-control" disabled>
+              <input type="hidden" id="unidadIdEditar{{ forloop.counter0 }}" name="unidad_id" value="{{ item.unidad_id }}">
+              <input type="hidden" id="unidadNombreHidden{{ forloop.counter0 }}" name="unidad_nombre" value="{{ item.unidad_nombre }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalUnidadesEditar" 
+                      data-index="{{ forloop.counter0 }}" data-producto="{{ item.producto_id }}">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Precio -->
+          <div class="mb-3">
+            <label class="form-label">Precio venta</label>
+            <input type="text" id="precioEditar{{ forloop.counter0 }}" 
+                   value="{{ item.precio|floatformat:2 }}" class="form-control" disabled>
+            <input type="hidden" id="precioHidden{{ forloop.counter0 }}" name="precio" value="{{ item.precio|floatformat:2 }}">
+          </div>
+
+          <!-- Stock actual -->
+          <div class="mb-3">
+          <label class="form-label">Stock actual</label>
+          <input type="text" id="stockEditar{{ forloop.counter0 }}" 
+                value="{{ item.stock_actual }}" class="form-control" disabled>
+          </div>
+
+          <!-- Lote / Caducidad -->
+          <div class="mb-3">
+            <label class="form-label">Lote / Caducidad</label>
+            <div class="input-group">
+              <input type="text" id="fechaCaducidadEditar{{ forloop.counter0 }}" 
+                     value="{{ item.fecha_caducidad }}" class="form-control" disabled>
+              <input type="hidden" id="loteIdEditar{{ forloop.counter0 }}" name="lote_id" value="{{ item.lote_id }}">
+              <button type="button" class="btn btn-outline-secondary abrirModalCaducidadEditar"
+                      data-index="{{ forloop.counter0 }}" data-producto="{{ item.producto_id }}">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cantidad disponible lote -->
+          <div class="mb-3">
+          <label class="form-label">Cantidad disponible lote</label>
+          <input type="text" id="cantidadDisponibleEditar{{ forloop.counter0 }}" 
+                    value="{{ item.cantidad_disponible }}" class="form-control" disabled>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Modal detalle producto (VENTA Eliminar) -->
+{% for item in tabla_local %}
+<div class="modal fade" id="modalEliminarVenta{{ forloop.counter0 }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Eliminar Detalle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar el detalle del producto 
+           <strong>{{ item.producto_nombre }}</strong>, 
+           unidad <strong>{{ item.unidad_nombre }}</strong>, 
+           cantidad <strong>{{ item.cantidad }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{% url 'eliminar_venta' forloop.counter0 %}" class="formEliminarVenta">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+
+
+
+<!-- Scripts -->
+<!-- Botón Cancelar -->
+<script>
+function cancelarVenta() {
+  fetch("{% url 'cancelar_venta' %}", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+    }
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.success) {
+      // limpiar tabla en frontend
+      document.getElementById("tablaLocalVentaBody").innerHTML = "";
+      document.getElementById("totalPagarVenta").value = "0.00";
+      document.getElementById("pagaCon").value = "";
+      document.getElementById("cambio").value = "0.00";
+    }
+  });
+}
+</script>
+
+<!-- Calcular Cambios -->
+<script>
+function calcularCambio() {
+  const total = parseFloat(document.getElementById("totalPagarVenta").value) || 0;
+  const pagaCon = parseFloat(document.getElementById("pagaCon").value) || 0;
+  const cambio = pagaCon - total;
+
+  document.getElementById("cambio").value = cambio.toFixed(2);
+}
+</script>
+
+
+<!-- Agregar -->
+<script>
+  // Abrir modales
+  document.querySelector('.abrirModalProductos').addEventListener('click', function() {
+    new bootstrap.Modal(document.getElementById('modalProductosCompra')).show();
+  });
+  document.querySelector('.abrirModalClientes').addEventListener('click', function() {
+    new bootstrap.Modal(document.getElementById('modalClientes')).show();
+  });
+  document.querySelector('.abrirModalUnidadesVenta').addEventListener('click', function() {
+    const productoId = document.getElementById("productoId").value;
+    if (!productoId) {
+      alert("Primero seleccione un producto.");
+      return;
+    }
+    cargarUnidadesVenta(productoId);
+    new bootstrap.Modal(document.getElementById('modalUnidadesVenta')).show();
+  });
+  document.querySelector('.abrirModalCaducidad').addEventListener('click', function() {
+    const productoId = document.getElementById("productoId").value;
+    if (!productoId) {
+      alert("Primero seleccione un producto.");
+      return;
+    }
+    cargarLotes(productoId);
+    new bootstrap.Modal(document.getElementById('modalCaducidad')).show();
+  });
+
+  // Seleccionar cliente (igual que proveedor en registro_compra)
+  document.addEventListener("DOMContentLoaded", function() {
+    const tablaClientes = document.querySelector("#modalClientes table tbody");
+    tablaClientes.addEventListener("click", function(e) {
+      if (e.target.classList.contains("seleccionarCliente") || e.target.closest(".seleccionarCliente")) {
+        const btn = e.target.closest(".seleccionarCliente");
+        const id = btn.dataset.id;
+        const nombre = btn.dataset.nombre;
+
+        document.getElementById("clienteId").value = id;
+        document.getElementById("clienteNombre").value = nombre;
+
+        bootstrap.Modal.getInstance(document.getElementById("modalClientes")).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+      }
+    });
+  });
+
+  // Seleccionar producto
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains("seleccionarProductoCompra") || e.target.closest(".seleccionarProductoCompra")) {
+    const btn = e.target.closest(".seleccionarProductoCompra");
+    const id = btn.dataset.id;
+    const nombre = btn.dataset.nombre;
+    const stock = btn.dataset.stock;
+
+    document.getElementById("productoId").value = id;
+    document.getElementById("productoNombre").value = nombre;
+    document.getElementById("detalleProductoNombre").value = nombre;
+    document.getElementById("detalleStockActual").value = stock;
+
+    bootstrap.Modal.getInstance(document.getElementById("modalProductosCompra")).hide();
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+    new bootstrap.Modal(document.getElementById("modal_detalle_producto")).show();
+  }
+});
+
+
+  // Cargar unidades dinámicamente (VENTA)
+  function cargarUnidadesVenta(productoId) {
+    fetch(`/ventas/unidades/${productoId}/`)
+      .then(response => response.json())
+      .then(result => {
+        const tbody = document.querySelector("#modalUnidadesVenta table tbody");
+        tbody.innerHTML = "";
+        result.unidades.forEach(u => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${u.nombre}</td>
+              <td>${u.equivalencia}</td>
+              <td>${u.precio}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarUnidadVenta"
+                  data-id="${u.id}"
+                  data-nombre="${u.nombre}"
+                  data-precio="${u.precio}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+  }
+
+  // Seleccionar unidad
+  document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("seleccionarUnidadVenta") || e.target.closest(".seleccionarUnidadVenta")) {
+      const btn = e.target.closest(".seleccionarUnidadVenta");
+      const id = btn.dataset.id;
+      const nombre = btn.dataset.nombre;
+      const precio = btn.dataset.precio;
+
+      document.getElementById("detalleUnidadId").value = id;
+      document.getElementById("detalleUnidadNombre").value = nombre;
+      document.getElementById("detallePrecioVenta").value = precio;
+
+      bootstrap.Modal.getInstance(document.getElementById("modalUnidadesVenta")).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    }
+  });
+
+  // Cargar lotes dinámicamente (VENTA)
+  function cargarLotes(productoId) {
+    fetch(`/ventas/lotes/${productoId}/`)
+      .then(response => response.json())
+      .then(result => {
+        const tbody = document.querySelector("#modalCaducidad table tbody");
+        tbody.innerHTML = "";
+        result.lotes.forEach(l => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${l.fecha_caducidad}</td>
+              <td>${l.cantidad}</td>
+              <td>
+                <button type="button" class="btn btn-success seleccionarLote"
+                  data-id="${l.id}"
+                  data-fecha="${l.fecha_caducidad}"
+                  data-cantidad="${l.cantidad}">
+                  Seleccionar <i class="fa fa-check ms-2"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+  }
+
+  // Seleccionar lote
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains("seleccionarLote") || e.target.closest(".seleccionarLote")) {
+    const btn = e.target.closest(".seleccionarLote");
+    const id = btn.dataset.id;
+    const fecha = btn.dataset.fecha;
+    const cantidadDisponible = btn.dataset.cantidad; // viene del data-cantidad
+
+    document.getElementById("detalleLoteId").value = id;
+    document.getElementById("detalleFechaCaducidad").value = fecha;
+    document.getElementById("detalleCantidadLoteDisponible").value = cantidadDisponible; // 🔹 nuevo
+
+    bootstrap.Modal.getInstance(document.getElementById("modalCaducidad")).hide();
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+  }
+});
+
+
+ // Agregar detalle vía AJAX (VENTA)
+document.getElementById("btnAgregarDetalleVenta").addEventListener("click", function() {
+  const data = {
+    producto_id: document.getElementById("productoId").value,
+    unidad_id: document.getElementById("detalleUnidadId").value,
+    cantidad: document.getElementById("detalleCantidad").value,
+    lote_id: document.getElementById("detalleLoteId").value,
+    csrfmiddlewaretoken: document.querySelector("[name=csrfmiddlewaretoken]").value
+  };
+
+  fetch("{% url 'agregar_venta' %}", {
+    method: "POST",
+    body: new URLSearchParams(data)
+  })
+  .then(response => response.json())
+  .then(result => {
+    const errorDiv = document.getElementById("mensajeErrorVenta");
+
+    if (result.success) {
+      // ocultar error si estaba visible
+      errorDiv.classList.add("d-none");
+      errorDiv.innerText = "";
+
+      const tbody = document.getElementById("tablaLocalVentaBody");
+      tbody.innerHTML = "";
+      result.tabla_local.forEach((item, i) => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.producto_nombre}</td>
+                <td>${item.unidad_nombre}</td>
+                <td>${item.cantidad}</td>
+                <td>${item.precio}</td>
+                <td>${item.monto}</td>
+                <td>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-warning btn-sm" onclick="editarDetalleVenta(${i})">
+                    <i class="fa fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarDetalleVenta(${i})">
+                    <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+                </td>
+            </tr>
+            `;
+      });
+
+      // recalcular total después de agregar
+      let suma = 0;
+      result.tabla_local.forEach(item => suma += parseFloat(item.monto));
+      document.getElementById("totalPagarVenta").value = suma.toFixed(2);
+
+      // cerrar modal detalle producto
+      bootstrap.Modal.getInstance(document.getElementById("modal_detalle_producto")).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+      // limpiar campos
+      document.getElementById("productoId").value = "";
+      document.getElementById("productoNombre").value = "";
+      document.getElementById("detalleProductoNombre").value = "";
+      document.getElementById("detalleStockActual").value = "";
+      document.getElementById("detalleUnidadId").value = "";
+      document.getElementById("detalleUnidadNombre").value = "";
+      document.getElementById("detallePrecioVenta").value = "";
+      document.getElementById("detalleCantidad").value = "";
+      document.getElementById("detalleFechaCaducidad").value = "";
+      document.getElementById("detalleLoteId").value = "";
+    } else {
+      // mostrar error dentro del modal
+      errorDiv.classList.remove("d-none");
+      errorDiv.innerText = result.error;
+    }
+  });
+});
+
+// 🔹 Recalcular total al cargar la página (VENTA)
+document.addEventListener("DOMContentLoaded", function() {
+  let suma = 0;
+  document.querySelectorAll("#tablaLocalVentaBody tr").forEach(tr => {
+    const monto = tr.querySelector("td:nth-child(5)")?.innerText; // columna Total
+    if (monto) {
+      suma += parseFloat(monto);
+    }
+  });
+  document.getElementById("totalPagarVenta").value = suma.toFixed(2);
+});
+</script>
+
+<!-- Editar -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // 🔹 Abrir modal de unidades (VENTA Editar)
+  document.querySelectorAll('.abrirModalUnidadesEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = this.dataset.index;
+      const productoId = this.dataset.producto;
+      const modalEditar = document.getElementById('modalEditarVenta' + index);
+      modalEditar.setAttribute('data-opened-unidad', 'true');
+
+      fetch(`/ventas/unidades/${productoId}/`)
+        .then(response => response.json())
+        .then(result => {
+          const tbody = document.querySelector("#modalUnidadesVentaEditar table tbody");
+          tbody.innerHTML = "";
+          result.unidades.forEach(u => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${u.nombre}</td>
+                <td>${u.equivalencia}</td>
+                <td>${u.precio}</td>
+                <td>
+                  <button type="button" class="btn btn-success seleccionarUnidadVentaEditar"
+                    data-id="${u.id}"
+                    data-nombre="${u.nombre}"
+                    data-precio="${u.precio}">
+                    Seleccionar <i class="fa fa-check ms-2"></i>
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+          const modalUnidades = document.getElementById('modalUnidadesVentaEditar');
+          modalUnidades.style.zIndex = 2000;
+          new bootstrap.Modal(modalUnidades).show();
+        });
+    });
+  });
+
+  // 🔹 Seleccionar unidad
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest(".seleccionarUnidadVentaEditar");
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const nombre = btn.dataset.nombre;
+    const precio = btn.dataset.precio;
+
+    document.querySelectorAll('[id^="modalEditarVenta"]').forEach(modal => {
+      if (modal.getAttribute('data-opened-unidad') === 'true') {
+        const index = modal.id.replace('modalEditarVenta', '');
+        document.getElementById('unidadIdEditar' + index).value = id;
+        document.getElementById('unidadNombreEditar' + index).value = nombre;
+        document.getElementById('unidadNombreHidden' + index).value = nombre;
+        document.getElementById('precioEditar' + index).value = precio;
+        document.getElementById('precioHidden' + index).value = precio;
+
+        bootstrap.Modal.getInstance(document.getElementById('modalUnidadesVentaEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+        modal.removeAttribute('data-opened-unidad');
+      }
+    });
+  });
+
+  // 🔹 Abrir modal de caducidad (VENTA Editar)
+  document.querySelectorAll('.abrirModalCaducidadEditar').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = this.dataset.index;
+      const productoId = this.dataset.producto;
+      const modalEditar = document.getElementById('modalEditarVenta' + index);
+      modalEditar.setAttribute('data-opened-lote', 'true');
+
+      fetch(`/ventas/lotes/${productoId}/`)
+        .then(response => response.json())
+        .then(result => {
+          const tbody = document.querySelector("#modalCaducidadEditar table tbody");
+          tbody.innerHTML = "";
+          result.lotes.forEach(l => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${l.fecha_caducidad}</td>
+                <td>${l.cantidad}</td>
+                <td>
+                  <button type="button" class="btn btn-success seleccionarLoteEditar"
+                    data-id="${l.id}"
+                    data-fecha="${l.fecha_caducidad}"
+                    data-cantidad="${l.cantidad}">
+                    Seleccionar <i class="fa fa-check ms-2"></i>
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+          const modalCad = document.getElementById('modalCaducidadEditar');
+          modalCad.style.zIndex = 2000;
+          new bootstrap.Modal(modalCad).show();
+        });
+    });
+  });
+
+  // 🔹 Seleccionar lote
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest(".seleccionarLoteEditar");
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const fecha = btn.dataset.fecha;
+    const cantidad = btn.dataset.cantidad;
+
+    document.querySelectorAll('[id^="modalEditarVenta"]').forEach(modal => {
+      if (modal.getAttribute('data-opened-lote') === 'true') {
+        const index = modal.id.replace('modalEditarVenta', '');
+        document.getElementById('loteIdEditar' + index).value = id;
+        document.getElementById('fechaCaducidadEditar' + index).value = fecha;
+        document.getElementById('cantidadDisponibleEditar' + index).value = cantidad;
+
+        bootstrap.Modal.getInstance(document.getElementById('modalCaducidadEditar')).hide();
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        new bootstrap.Modal(modal).show();
+        modal.removeAttribute('data-opened-lote');
+      }
+    });
+  });
+
+  // 🔹 Guardar cambios vía AJAX con validaciones
+  document.querySelectorAll('[id^="formEditarVenta"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(this);
+
+      fetch(this.action, {
+        method: "POST",
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+          modal.hide();
+
+          // refrescar tabla
+          const tbody = document.getElementById("tablaLocalVentaBody");
+          tbody.innerHTML = "";
+          result.tabla_local.forEach((item, i) => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${item.producto_nombre}</td>
+                <td>${item.unidad_nombre}</td>
+                <td>${item.cantidad}</td>
+                <td>${item.precio}</td>
+                <td>${item.monto}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="editarDetalleVenta(${i})">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarDetalleVenta(${i})">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          });
+
+          // recalcular total y cambio
+          let suma = 0;
+          result.tabla_local.forEach(item => suma += parseFloat(item.monto));
+          document.getElementById("totalPagarVenta").value = suma.toFixed(2);
+          const pagaCon = parseFloat(document.getElementById("pagaCon").value) || 0;
+          document.getElementById("cambio").value = (pagaCon - suma).toFixed(2);
+
+        } else {
+          // Mostrar mensaje de error en el modal
+          const erroresDiv = this.querySelector('[id^="erroresEditarVenta"]');
+          erroresDiv.innerHTML =
+            "<div class='alert alert-danger'><i class='fa fa-exclamation-circle me-2'></i>" + (result.error || "Error al actualizar detalle") + "</div>";
+        }
+      });
+    });
+  });
+
+});
+
+// 🔹 Función para abrir modal de edición
+function editarDetalleVenta(index) {
+  const modal = document.getElementById("modalEditarVenta" + index);
+  if (modal) {
+    new bootstrap.Modal(modal).show();
+  }
+}
+</script>
+
+<!-- Eliminar -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll(".formEliminarVenta").forEach(form => {
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      // Debug para confirmar que el botón dispara
+      console.log("🟢 Eliminando con URL:", this.action);
+
+      const url = this.action;
+      const data = new FormData(this);
+
+      fetch(url, {
+        method: "POST",
+        body: data,
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      })
+      .then(response => response.json())
+      .then(result => {
+        console.log("Resultado:", result);
+        if (result.success) {
+          var modal = bootstrap.Modal.getInstance(this.closest(".modal"));
+          modal.hide();
+
+          const tbody = document.getElementById("tablaLocalVentaBody");
+          tbody.innerHTML = "";
+          result.tabla_local.forEach((item, i) => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${item.producto_nombre}</td>
+                <td>${item.unidad_nombre}</td>
+                <td>${item.cantidad}</td>
+                <td>${item.precio}</td>
+                <td>${item.monto}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditarVenta${i}">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalEliminarVenta${i}">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          });
+
+          let suma = 0;
+          result.tabla_local.forEach(item => suma += parseFloat(item.monto));
+          document.getElementById("totalPagarVenta").value = suma.toFixed(2);
+          const pagaCon = parseFloat(document.getElementById("pagaCon").value) || 0;
+          document.getElementById("cambio").value = (pagaCon - suma).toFixed(2);
+
+        } else {
+          alert("❌ Error al eliminar detalle");
+        }
+      })
+      .catch(err => {
+        console.error("Error en fetch:", err);
+        alert("❌ Error en la petición de eliminación");
+      });
+    });
+  });
+});
+</script>
+
+{% endblock %}

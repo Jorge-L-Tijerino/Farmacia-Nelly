@@ -1,0 +1,80 @@
+{% extends 'paginas/index.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <!-- Barra de búsqueda y filtro -->
+  <div class="d-flex justify-content-between mb-3">
+    <div class="d-flex w-75 gap-3">
+      <input type="text" id="buscadorStock" class="form-control" placeholder="Buscar producto...">
+      <select id="filtroStock" class="form-select w-auto">
+        <option value="todas">Todas</option>
+        <option value="por-agotarse">Por Agotarse</option>
+        <option value="agotado">Agotado</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Tabla Productos con Stock -->
+  <div class="d-flex justify-content-center">
+    <table id="tablaStock" class="table table-striped text-center">
+      <thead>
+        <tr>
+          <th style="display:none;">ID</th>
+          <th>Producto</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for producto in productos %}
+        <tr
+          {% if producto.Stock == 0 %}
+            class="table-danger estado-agotado"
+          {% elif producto.Stock <= 15 %}
+            class="table-warning estado-por-agotarse"
+          {% endif %}
+        >
+          <td style="display:none;">{{ producto.id }}</td>
+          <td>{{ producto.Nombre_Medicamento }}</td>
+          <td>{{ producto.Stock }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div> <!-- d-flex justify-content-center -->
+
+</div> <!-- container -->
+
+<!-- Script: Buscador + Filtro -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const buscador = document.getElementById("buscadorStock");
+  const filtro = document.getElementById("filtroStock");
+  const filas = document.querySelectorAll("#tablaStock tbody tr");
+
+  function aplicarFiltros() {
+    const texto = buscador.value.toLowerCase();
+    const tipo = filtro.value;
+
+    filas.forEach(fila => {
+      const contenido = fila.textContent.toLowerCase();
+      const esAgotado = fila.classList.contains("estado-agotado");
+      const esPorAgotarse = fila.classList.contains("estado-por-agotarse");
+
+      let visible = contenido.includes(texto);
+
+      if (tipo === "agotado") visible = visible && esAgotado;
+      else if (tipo === "por-agotarse") visible = visible && esPorAgotarse;
+      // "todas" muestra todo
+
+      fila.style.display = visible ? "" : "none";
+    });
+  }
+
+  buscador.addEventListener("keyup", aplicarFiltros);
+  filtro.addEventListener("change", aplicarFiltros);
+});
+</script>
+
+{% endblock %}
+
